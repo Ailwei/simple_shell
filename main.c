@@ -99,6 +99,17 @@ int main(void)
                     perror("Failed to unset environment variable");
                 }
             }
+            else if (strncmp(command, "cd ", 3) == 0)
+            {
+                /* Handle "cd" command by calling the cd_builtin function */
+                char *directory = command + 3;
+                int result = handle_cd(directory);
+
+                if (result != 0)
+                {
+                    fprintf(stderr, "cd: Failed to change directory\n");
+                }
+            }
             else
             {
                 /* Execute the command */
