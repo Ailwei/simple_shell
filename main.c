@@ -9,8 +9,8 @@
  */
 int main(void)
 {
-	 char *line;
-	 size_t command_length;
+    char *line;
+    size_t command_length;
     char *shell_name = "hsh";
     char command[MAX_COMMAND_LENGTH];
 
@@ -51,7 +51,7 @@ int main(void)
         /* Free the memory allocated by custom_getline */
         free(line);
 
-        /* Rest of the code to handle built-in commands and execute external commands */
+        /* Handle built-in commands */
         if (command_length > 0)
         {
             if (strcmp(command, "exit") == 0)
@@ -69,6 +69,35 @@ int main(void)
             {
                 /* Handle the "env" builtin command */
                 env_builtin(environ);
+            }
+            else if (strncmp(command, "setenv ", 7) == 0)
+            {
+                /* Handle "setenv" command */
+                char *arguments = command + 7;
+                const char *variable = strtok(arguments, " ");
+                const char *value = strtok(NULL, " ");
+
+                if (variable != NULL && value != NULL)
+                {
+                    if (set_env(variable, value) != 0)
+                    {
+                        perror("Failed to set environment variable");
+                    }
+                }
+                else
+                {
+                    fprintf(stderr, "Usage: setenv VARIABLE VALUE\n");
+                }
+            }
+            else if (strncmp(command, "unsetenv ", 9) == 0)
+            {
+                /* Handle "unsetenv" command */
+                char *variable = command + 9;
+
+                if (unset_env(variable) != 0)
+                {
+                    perror("Failed to unset environment variable");
+                }
             }
             else
             {
