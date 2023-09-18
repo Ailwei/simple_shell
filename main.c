@@ -2,12 +2,13 @@
 
 int main(void)
 {
-	size_t i;
+    size_t i;
     char *line;
     size_t command_length;
     char *shell_name = "hsh";
     char command[MAX_COMMAND_LENGTH];
-char **commands;
+    char **commands;
+
     /* Get the PATH environment variable */
     char *path_env = getenv("PATH");
     if (path_env == NULL)
@@ -33,10 +34,10 @@ char **commands;
         }
 
         /* Split the input into commands using ';' */
-         commands = handle_separators(line);
+        commands = handle_separators(line);
 
         /* Iterate through the commands and execute them */
-        for ( i = 0; commands[i] != NULL; i++)
+        for (i = 0; commands[i] != NULL; i++)
         {
             /* Copy the command to the command buffer */
             strncpy(command, commands[i], sizeof(command));
@@ -48,7 +49,7 @@ char **commands;
                 command[command_length - 1] = '\0';
             }
 
-            /* Handle built-in commands and external commands */
+            /* Handle built-in commands, logical operators, and external commands */
             if (command_length > 0)
             {
                 if (strcmp(command, "exit") == 0)
@@ -96,27 +97,26 @@ char **commands;
                         perror("Failed to unset environment variable");
                     }
                 }
+                else if (strncmp(command, "cd", 2) == 0)
+                {
+                    /* Handle "cd" command */
+                    const char *directory = command + 2;
+                    handle_cd(directory);
+                }
                 else
                 {
-                    /* Execute the command */
-                    if (strstr(command, " ") != NULL)
+                    /* Execute the command with logical operators */
+                    int result = handle_logical_operators(command);
+                    if (result == -1)
                     {
-                        /* Command has arguments, use execute_command_with_args */
-                        char *space_position = strchr(command, ' ');
-                        const char *arguments = space_position + 1;
-                        execute_cmd_args(command, arguments);
-                    }
-                    else
-                    {
-                        /* Command has no arguments, use execute_command */
-                        execute_command(command);
+                        fprintf(stderr, "Failed to handle logical operators\n");
                     }
                 }
             }
         }
 
         /* Free the memory allocated for commands */
-        for ( i = 0; commands[i] != NULL; i++)
+        for (i = 0; commands[i] != NULL; i++)
         {
             free(commands[i]);
         }

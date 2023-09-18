@@ -10,9 +10,16 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
+/*structure to store aliases */
+struct Alias {
+    char name[MAX_ALIAS_NAME];
+    char value[MAX_ALIAS_VALUE];
+    struct Alias* next;
+};
+
 /* functions prototypes */
 
-void execute_command(const char *command);
+int execute_command(const char *command);
 void execute_command_with_args(char *command);
 void execute_command_with_path(char *command, char *path, char *shell_name);
 void exit_shell(char *shell_name);
@@ -25,6 +32,9 @@ int set_env(const char *variable, const char *value);
 int handle_cd(const char *directory);
 char **handle_separators(char *input);
 int handle_logical_operators(const char *input);
+void add_alias(const char* name, const char* value);
+void print_aliases(const char* alias_name);
+void alias_builtin(char** args);
 
 /*declared vars */
 
@@ -33,10 +43,12 @@ int handle_logical_operators(const char *input);
 #define MAX_ARGS 10
 #define BUFFER_SIZE 1024
 #define MAX_COMMANDS 100
+#define MAX_ALIAS_NAME 100
+#define MAX_ALIAS_VALUE 100
 
 /*declare environ */
 extern char **environ;
-
+/*extern struct Alias* alias_list;*/
 
 #endif /* SHELL_H */
 

@@ -1,7 +1,9 @@
 #include "shell.h"
 
-void execute_command(const char *command)
+int execute_command(const char *command)
 {
+	 int exit_status;
+
 	/*fork a child process to execute the coomand */
 
 	pid_t child_pid= fork();
@@ -32,7 +34,7 @@ void execute_command(const char *command)
 
 		if (WIFEXITED(status))
 		{
-			int exit_status = WEXITSTATUS(status);
+			exit_status = WEXITSTATUS(status);
 
 			if (exit_status != 0)
 			{
@@ -42,7 +44,9 @@ void execute_command(const char *command)
 		else
 		{
 			printf("Error: Command did not exit normally\n");
+			
 		}
+		return (exit_status);
 
 	}
 }
