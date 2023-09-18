@@ -32,6 +32,14 @@ int main(void)
             printf("\nExiting %s.\n", shell_name);
             break;
         }
+	/* check if entered command is alias */
+	if (strncmp(line, "alias ", 6) == 0)
+	{
+		alias_builtin(handle_separators(line));
+		continue;
+	}
+	else
+	{
 
         /* Split the input into commands using ';' */
         commands = handle_separators(line);
@@ -121,6 +129,7 @@ int main(void)
             free(commands[i]);
         }
         free(commands);
+	
 
         /* Free the memory allocated by custom_getline */
         free(line);
@@ -128,4 +137,5 @@ int main(void)
 
     return 0;
 }
-
+return 0;
+}
