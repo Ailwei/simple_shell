@@ -30,7 +30,7 @@ struct Alias {
 
 /* functions prototypes */
 
-
+void skip_comments(char **line);
 void print_aliases(const char* alias_name);
 void alias_builtin(char** args);
 void add_alias(const char* name, const char* value);
@@ -47,7 +47,7 @@ int set_env(const char *variable, const char *value);
 int handle_cd(const char *directory);
 char **handle_separators(char *input);
 int handle_logical_operators(const char *input);
-void replace_variables(char *command, int last_exit_status);
+char* replace_variables(char *command, int last_exit_status);
 void replace_in_string(char *str, int offset, const char *replacement);
 
 /*declare environ */
