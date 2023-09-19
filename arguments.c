@@ -25,14 +25,20 @@ void execute_command_with_args(char *command)
 				args[arg_count++] = token;
 				token = strtok(NULL, " ");
 			}
+			if (arg_count >= MAX_ARGS)
+			{
+				fprintf(stderr, "Too many arguments\n");
+				exit(EXIT_FAILURE);
+			}
 			args[arg_count++] = NULL;
-			execve(args[0], args, NULL);
+			if (execvp(args[0], args) == -1)
+			{
+				 /*if execvp retuens there was an error */
+                        perror("Command execution failed");
+                        exit(EXIT_FAILURE);
 
-			/*if execvp retuens there was an error */
-			perror("Command execution failed");
-			exit(1);
-	}
-	else
+			}
+			else
 	{
 		/* this the parent process */
 		 int status;
@@ -44,12 +50,17 @@ void execute_command_with_args(char *command)
 
 			 if (exit_status != 0)
 			 {
-				 printf("Error: Command exited with status %d\n", exit_status);
+				 fprintf(stderr, " Command exited with status %d\n", exit_status);
 			 }
-		 }
-		 else
+			 else if (WIFSIGNALED(status))
+			 {
+				 int term_signal = WTERMSIG(status);
+            fprintf(stderr, "Command terminated by signal %d\n", term_signal);
+			 }
+			 else
 		 {
-			 printf("Error: Command did not exit normally\n");
+			fprintf(stderr, "Command did not exit normally\n");
 		 }
 	}
+}
 }
