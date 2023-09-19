@@ -26,7 +26,7 @@ void execute_command_with_args(char *command)
 				token = strtok(NULL, " ");
 			}
 			args[arg_count++] = NULL;
-			execvp(args[0], args);
+			execve(args[0], args, NULL);
 
 			/*if execvp retuens there was an error */
 			perror("Command execution failed");
