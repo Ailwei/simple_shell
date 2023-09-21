@@ -10,18 +10,18 @@ char *get_history_filename(ShellInfo *info)
 {
     char *home_dir;
 
-    home_dir = _getenv(info, "HOME=");
+    home_dir = getenv(info, "HOME=");
     if (!home_dir)
         return (NULL);
 
-    char *filename = malloc(sizeof(char) * (_strlen(home_dir) + _strlen(HISTORY_FILE) + 2));
+    char *filename = malloc(sizeof(char) * (strlen(home_dir) + strlen(HIST_FILE) + 2));
     if (!filename)
         return (NULL);
 
     filename[0] = 0;
-    _strcpy(filename, home_dir);
-    _strcat(filename, "/");
-    _strcat(filename, HISTORY_FILE);
+    strcpy(filename, home_dir);
+    strcat(filename, "/");
+    strcat(filename, HIST_FILE);
 
     return (filename);
 }
@@ -49,11 +49,11 @@ int write_history_to_file(ShellInfo *info)
 
     for (entry = info->history; entry; entry = entry->next)
     {
-        _putsfd(entry->command, fd);
-        _putcharfd('\n', fd);
+        putsfd(entry->command, fd);
+        putcharfd('\n', fd);
     }
 
-    _putcharfd(BUF_FLUSH, fd);
+    putcharfd(BUF_FLUSH, fd);
     close(fd);
     return (1);
 }

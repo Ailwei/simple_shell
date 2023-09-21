@@ -8,7 +8,7 @@
  *        constant function prototype.
  * Return: Always 0
  */
-int custom_display_history(info_t *info)
+int custom_display_history(ShellInfo *info)
 {
 	custom_print_list(info->command_history);
 	return (0);
@@ -21,7 +21,7 @@ int custom_display_history(info_t *info)
  *
  * Return: Always 0 on success, 1 on error
  */
-int custom_unset_alias(info_t *info, char *str)
+int custom_unset_alias(ShellInfo *info, char *str)
 {
 	char *p, c;
 	int ret;
@@ -44,7 +44,7 @@ int custom_unset_alias(info_t *info, char *str)
  *
  * Return: Always 0 on success, 1 on error
  */
-int custom_set_alias(info_t *info, char *str)
+int custom_set_alias(ShellInfo *info, char *str)
 {
 	char *p;
 
@@ -87,7 +87,7 @@ int custom_print_alias(list_t *node)
  *          constant function prototype.
  * Return: Always 0
  */
-int custom_alias(info_t *info)
+int custom_alias(ShellInfo *info)
 {
 	int i = 0;
 	char *p = NULL;

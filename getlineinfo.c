@@ -30,7 +30,7 @@ void setShellInfo(ShellInfo *info, char **av)
             info->argumentVector = malloc(sizeof(char *) * 2);
             if (info->argumentVector)
             {
-                info->argumentVector[0] = duplicateString(info->arguments);
+                info->argumentVector[0] =  replaceString(info->arguments);
                 info->argumentVector[1] = NULL;
             }
         }

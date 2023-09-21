@@ -33,15 +33,15 @@ int custom_atoi(char *str)
  * @info: The parameter & return info struct
  * @error_type: String containing the specified error type
  */
-void print_custom_error(info_t *info, char *error_type)
+void print_custom_error(ShellInfo *info, char *error_type)
 {
-	_eputs(info->fname);
-	_eputs(": ");
+	 print_string(info->fname);
+	 print_string(": ");
 	print_custom_d(info->line_count, STDERR_FILENO);
-	_eputs(": ");
-	_eputs(info->argv[0]);
-	_eputs(": ");
-	_eputs(error_type);
+	 print_string(": ");
+	 print_string(info->arg[0]);
+	 print_string(": ");
+	 print_string(error_type);
 }
 
 /**
@@ -53,12 +53,12 @@ void print_custom_error(info_t *info, char *error_type)
  */
 int print_custom_d(int input, int fd)
 {
-	int (*custom_putchar)(char) = _putchar;
+	int (*custom_putchar)(char) = print_character;
 	int i, count = 0;
 	unsigned int abs_value, current;
 
 	if (fd == STDERR_FILENO)
-		custom_putchar = _eputchar;
+		custom_putchar = print_character;
 	if (input < 0)
 	{
 		abs_value = -input;

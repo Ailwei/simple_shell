@@ -1,3 +1,5 @@
+#include "shell.h"
+
 /**
  * custom_puts_error - Prints an error string to stderr
  * @error_string: The error string to be printed
@@ -27,7 +29,7 @@ void custom_puts_error(char *error_string)
 int custom_putchar_error(char c)
 {
 	static int i;
-	static char buf[CUSTOM_WRITE_BUF_SIZE];
+	static char buf[WRITE_BUF_SIZE];
 
 	if (c == CUSTOM_BUF_FLUSH || i >= CUSTOM_WRITE_BUF_SIZE)
 	{
@@ -50,7 +52,7 @@ int custom_putchar_error(char c)
 int custom_putchar_fd(char c, int fd)
 {
 	static int i;
-	static char buf[CUSTOM_WRITE_BUF_SIZE];
+	static char buf[WRITE_BUF_SIZE];
 
 	if (c == CUSTOM_BUF_FLUSH || i >= CUSTOM_WRITE_BUF_SIZE)
 	{

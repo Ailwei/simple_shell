@@ -1,3 +1,5 @@
+#include "shell.h"
+
 /**
  * custom_exit - Exits the shell
  * @info: Structure containing potential arguments. Used to maintain
@@ -5,22 +7,22 @@
  * Return: Exits with a given exit status
  * (0) if info->command_name != "exit"
  */
-int custom_exit(info_t *info)
+int custom_exit(ShellInfo *info)
 {
 	int exit_code;
 
 	if (info->arguments[1]) /* If there is an exit argument */
 	{
-		exit_code = custom_strtoi(info->arguments[1]);
+		exit_code = custom_atoi(&info->arguments[1]);
 		if (exit_code == -1)
 		{
 			info->status = 2;
-			custom_print_error(info, "Illegal number: ");
-			custom_puts(info->arguments[1]);
-			custom_putchar('\n');
+			custom_puts_error(ShellInfo, "Illegal number: ");
+			custom_puts_fd(&info->arguments[1]);
+			custom_putchar_fd('\n');
 			return 1;
 		}
-		info->error_number = custom_strtoi(info->arguments[1]);
+		info->error_number = custom_atoi(&info->arguments[1]);
 		return -2;
 	}
 	info->error_number = -1;
@@ -33,14 +35,14 @@ int custom_exit(info_t *info)
  *        constant function prototype.
  * Return: Always 0
  */
-int custom_change_directory(info_t *info)
+int custom_change_directory(ShellInfo *info)
 {
 	char *current_directory, *new_directory, buffer[1024];
 	int chdir_result;
 
-	current_directory = custom_get_current_directory(buffer, 1024);
+	current_directory = custom_change_directory(buffer, 1024);
 	if (!current_directory)
-		custom_puts("TODO: >>getcwd failure message here<<\n");
+		custom_puts_fd("TODO: >>getcwd failure message here<<\n");
 
 	if (!info->arguments[1])
 	{
@@ -50,12 +52,12 @@ int custom_change_directory(info_t *info)
 		else
 			chdir_result = custom_chdir(new_directory);
 	}
-	else if (custom_strcmp(info->arguments[1], "-") == 0)
+	else if (custom_help(info->arguments[1], "-") == 0)
 	{
 		if (!custom_get_environment_variable(info, "OLDPWD="))
 		{
 			custom_puts(current_directory);
-			custom_putchar('\n');
+			custom_putchar_fd('\n');
 			return 1;
 		}
 		custom_puts(custom_get_environment_variable(info, "OLDPWD="));
@@ -67,14 +69,14 @@ int custom_change_directory(info_t *info)
 
 	if (chdir_result == -1)
 	{
-		custom_print_error(info, "can't cd to ");
+		custom_putchar_fd(info, "can't cd to ");
 		custom_puts(info->arguments[1]);
 		custom_putchar('\n');
 	}
 	else
 	{
 		custom_set_environment_variable(info, "OLDPWD", custom_get_environment_variable(info, "PWD="));
-		custom_set_environment_variable(info, "PWD", custom_get_current_directory(buffer, 1024));
+		custom_set_environment_variable(info, "PWD",custom_change_directory(buffer, 1024));
 	}
 
 	return 0;
@@ -86,11 +88,11 @@ int custom_change_directory(info_t *info)
  *             constant function prototype.
  * Return: Always 0
  */
-int custom_help(info_t *info)
+int custom_help(ShellInfo *info)
 {
 	char **argument_array;
 
-	argument_array = info->arguments;
+	argument_array = &info->arguments;
 	custom_puts("Help call works. Function not yet implemented.\n");
 
 	if (0)

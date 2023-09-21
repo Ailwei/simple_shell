@@ -6,7 +6,7 @@
  *
  * Return: 1 if interactive mode, 0 otherwise
  */
-int is_interactive(info_t *info)
+int is_interactive(ShellInfo *info)
 {
     return (isatty(STDIN_FILENO) && info->read_file_descriptor <= 2);
 }

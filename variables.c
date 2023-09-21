@@ -8,7 +8,7 @@
  *
  * Return: 1 if chain delimiter, 0 otherwise
  */
-int isChainDelimiter(ShellInfo *shellInfo, char *buf, size_t *p)
+int isChainDelimiter(ShellInfo *info, char *buf, size_t *p)
 {
     size_t j = *p;
 
@@ -16,7 +16,7 @@ int isChainDelimiter(ShellInfo *shellInfo, char *buf, size_t *p)
     {
         buf[j] = 0;
         j++;
-        shellInfo->cmd_buf_type = CMD_OR;
+        ShellInfo->cmd_buf_type = CMD_OR;
     }
     else if (buf[j] == '&' && buf[j + 1] == '&')
     {
@@ -45,7 +45,7 @@ int isChainDelimiter(ShellInfo *shellInfo, char *buf, size_t *p)
  *
  * Return: Void
  */
-void checkChain(ShellInfo *shellInfo, char *buf, size_t *p, size_t i, size_t len)
+void checkChain(ShellInfo *info, char *buf, size_t *p, size_t i, size_t len)
 {
     size_t j = *p;
 
@@ -75,7 +75,7 @@ void checkChain(ShellInfo *shellInfo, char *buf, size_t *p, size_t i, size_t len
  *
  * Return: 1 if replaced, 0 otherwise
  */
-int replaceAliases(ShellInfo *shellInfo)
+int replaceAliases(ShellInfo *info)
 {
     int i;
     list_t *node;
@@ -104,7 +104,7 @@ int replaceAliases(ShellInfo *shellInfo)
  *
  * Return: 1 if replaced, 0 otherwise
  */
-int replaceVariables(ShellInfo *shellInfo)
+int replaceVariables(ShellInfo *info)
 {
     int i = 0;
     list_t *node;

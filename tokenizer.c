@@ -1,5 +1,5 @@
 #include "shell.h"
-#include <stdlib.h>
+
 
 /**
  * splitStringByDelimiters - splits a string into words. Repeated delimiters are ignored

@@ -7,7 +7,7 @@
  *          constant function prototype.
  * Return: Always 0
  */
-int custom_print_environment(info_t *info)
+int custom_print_environment(ShellInfo *info)
 {
 	custom_print_list_strings(info->environment);
 	return (0);
@@ -20,7 +20,7 @@ int custom_print_environment(info_t *info)
  *
  * Return: The value of the environment variable
  */
-char *custom_get_environment_variable(info_t *info, const char *name)
+char *custom_get_environment_variable(ShellInfo *info, const char *name)
 {
 	list_t *node = info->environment;
 	char *p;
@@ -42,7 +42,7 @@ char *custom_get_environment_variable(info_t *info, const char *name)
  *        constant function prototype.
  * Return: Always 0
  */
-int custom_set_environment_variable(info_t *info)
+int custom_set_environment_variable(ShellInfo *info)
 {
 	if (info->argc != 3)
 	{
@@ -60,7 +60,7 @@ int custom_set_environment_variable(info_t *info)
  *        constant function prototype.
  * Return: Always 0
  */
-int custom_unset_environment_variable(info_t *info)
+int custom_unset_environment_variable(ShellInfo *info)
 {
 	int i;
 
@@ -81,7 +81,7 @@ int custom_unset_environment_variable(info_t *info)
  *          constant function prototype.
  * Return: Always 0
  */
-int custom_populate_environment_list(info_t *info)
+int custom_populate_environment_list(ShellInfo *info)
 {
 	list_t *node = NULL;
 	size_t i;
