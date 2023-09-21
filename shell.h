@@ -12,215 +12,198 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <limits.h>
 
-/* definitions */
+/* for read/write buffers */
+#define READ_BUF_SIZE 1024
+#define WRITE_BUF_SIZE 1024
+#define BUF_FLUSH -1
 
-#define WRITE_BUFFER_SIZE 1024
-#define BUFFER_FLUSH '\0'
-#define DELIM " \t\r\n\a"
-#define HIST_MAX 4096
-#define HIST_FILE ".simple_shell_history"
-#define BUFSIZE 1024
-#define BUF_FLUSH 0
+/* for command chaining */
+#define CMD_NORM	0
+#define CMD_OR		1
+#define CMD_AND		2
+#define CMD_CHAIN	3
 
-/*structure to shell info */
+/* for convert_number() */
+#define CONVERT_LOWERCASE	1
+#define CONVERT_UNSIGNED	2
 
-typedef struct ShellInfo
+/* 1 if using system getline() */
+#define USE_GETLINE 0
+#define USE_STRTOK 0
+
+#define HIST_FILE	".simple_shell_history"
+#define HIST_MAX	4096
+#define CUSTOM_WRITE_BUF_SIZE 1024
+#define CUSTOM_BUF_FLUSH '\n'
+
+extern char **environ;
+
+typedef struct liststr
 {
-	char *str;
 	int num;
-	ShellHistoryEntry *history;
-    int histcount;
-	int readfd;
+	char *str;
+	struct liststr *next;
+} Custom_Lists;
+
+typedef struct Shellpsser
+
+
+{
+
+	int read_file_descriptor;
+	char *arguments;
+	char **argumentVector;
+	char *path;
+	int argc;
+	unsigned int line_count;
+	int err_num;
+	int linecount_flag;
+	char *fname;
+	Custom_Lists *env;
+	Custom_Lists *history;
+	Custom_Lists *alias;
+	char **environ;
+	int env_changed;
 	int status;
-    char **argv;
-    char *arg;
-    char **env;
-    char **alias;
-    char *path;
-    int line_count;
-    int err_num;
-    int linecount_flag;
-    int cmd_buf_type;
+
+	char **cmd_buf; /* pointer to cmd ; chain buffer, for memory mangement */
+	int cmd_buf_type; /* CMD_type ||, &&, ; */
+	int readfd;
+	int histcount;
 }ShellInfo;
 
-typedef struct builtins
-{
-	char *type;
-	int (*func)(ShellInfo *);
-} builtin_table;
-typedef struct List
-{
-    char *data;
-    size_t number;
-    struct List *next;
-} list_t;
-/*history functions */
 
-char *_strdup(const char *str);
-char *_strcpy(char *dest, const char *src);
-void _puts(const char *str);
-void _putchar(char c);
-void _putsfd(const char *str, int fd);
-void _putcharfd(char c, int fd);
-int _strlen(const char *str);
-char *_strcat(char *dest, const char *src);
-int _strcmp(const char *s1, const char *s2);
-char *_memset(char *s, char b, unsigned int n);
-int _strncmp(const char *s1, const char *s2, size_t n);
-char *get_env_var(char **env, const char *name);
-ShellHistoryEntry *add_history_entry(ShellInfo *info, char *entry, int linecount);
+
+
+
+
+
+/* functions prototypes atoic.c*/
+
+int custom_atoi(char *s);
+int custom_is_alpha(int c);
+int is_delimiter(char c, char *delimiter_str);
+int is_interactive(ShellInfo *info);
+
+/* functions prototypes errors */
+
+void custom_puts_error(char *error_string);
+int custom_putchar_error(char c);
+int custom_putchar_fd(char c, int fd);
+int custom_puts_fd(char *str, int fd);
+int custom_atoi(char *str);
+void print_custom_error(ShellInfo *info, char *error_type);
+int print_custom_d(int input, int fd);
+char *custom_convert_number(long int num, int base, int flags);
+void remove_custom_comments(char *buf);
+
+/* functions getlineinfo.c */
+
+void freeShellInfo(ShellInfo *info, int all);
+void setShellInfo(ShellInfo *info, char **av);
+void initializeShellInfo(ShellInfo *info);
+void blockCtrlC(__attribute__((unused)) int sigNum);
+int customGetline(ShellInfo *info, char **pointer, size_t *length);
+ssize_t readBuffer(ShellInfo *info, char *buffer, size_t *currentIndex);
+ssize_t getInput(ShellInfo *info);
+ssize_t bufferInput(ShellInfo *info, char **buffer, size_t *bufferSize);
+
+/* functions protypes memory.c  */
+
+int bfree(void **ptr);
+
+/*protypes of history.c */
+
 int renumber_history_entries(ShellInfo *info);
+int add_history_entry(ShellInfo *info, char *entry, int linecount);
+int read_history_from_file(ShellInfo *info);
+int write_history_to_file(ShellInfo *info);
+char *get_history_filename(ShellInfo *info);
 
-/* main shell loop */
+/*prototypes of parser.c */
 
-int hsh(ShellInfo *info, char **av);
-/* Custom string functions */
-char *_custom_strcpy(char *dest, const char *src);
-char *_custom_strcat(char *dest, const char *src);
-size_t _custom_strlen(const char *str);
-char *_custom_strdup(const char *str);
-char *_custom_strchr(const char *str, int c);
-char *_custom_strtok(char *str, const char *delim);
-
-/* Custom standard I/O functions */
-
-ssize_t _custom_putchar(char c);
-ssize_t _custom_puts(const char *s);
-ssize_t _custom_eputs(const char *s);
-
-/* Custom number conversion functions */
-char *_custom_itoa(int n, int base);
-char *_custom_utoa(unsigned int n, int base);
-char *_custom_itoa_long(long n, int base);
-char *_custom_utoa_long(unsigned long n, int base);
-
-/* builtins util */
-
-/* Custom list functions */
-size_t custom_list_length(const CustomList *head);
-char **custom_list_to_strings(CustomList *head);
-size_t custom_list_print(const CustomList *head);
-CustomList *custom_list_starts_with(CustomList *node, char *prefix, char c);
-ssize_t custom_get_node_index(CustomList *head, CustomList *node);
-
-char *_set_memory(char *s, char b, unsigned int n);
-void free_strings(char **str_arr);
-void *_reallocate(void *ptr, unsigned int old_size, unsigned int new_size);
-
-/*parser.c */
-
-int hsh(ShellInfo *info, char **av);
-int is_executable(ShellInfo *info, char *path);
-char *duplicate_chars(char *pathstr, int start, int stop);
 char *find_command_path(ShellInfo *info, char *pathstr, char *cmd);
+char *duplicate_chars(char *pathstr, int start, int stop);
+int is_executable(ShellInfo *info, char *path);
 
-/* variables.c prototype */
+/*prototypes of strings */
 
-int isChainDelimiter(ShellInfo *shellInfo, char *buf, size_t *p);
-void checkChain(ShellInfo *shellInfo, char *buf, size_t *p, size_t i, size_t len);
-int replaceAliases(ShellInfo *shellInfo);
-int replaceVariables(ShellInfo *shellInfo);
+int print_character(char c);
+void print_string(char *str);
+char *string_duplicate(const char *str);
+char *string_copy(char *destination, char *source);
+char *str_concatenate(char *dest, char *src);
+char *starts_with(const char *haystack, const char *needle);
+int str_compare(char *s1, char *s2);
+int str_length(char *s);
+
+/*prototypes of lists */
+
+ssize_t custom_get_node_index(Custom_Lists *head, Custom_Lists *node);
+Custom_Lists *custom_list_starts_with(Custom_Lists *node, char *prefix, char c);
+size_t custom_list_print(const Custom_Lists *head);
+char **custom_list_to_strings(Custom_Lists *head);
+size_t custom_list_length(const Custom_Lists *head);
+void custom_free_list(Custom_Lists **head_ptr);
+int custom_delete_node_at_index(Custom_Lists **head, unsigned int index);
+size_t custom_print_list_data(const Custom_Lists *h);
+Custom_Lists *add_custom_node_end(Custom_Lists **head, const char *data, int number);
+Custom_Lists *add_custom_node(Custom_Lists **head, const char *data, int number);
+
+/*prototypes for builtin */
+
+int custom_help(ShellInfo *info);
+int custom_change_directory(ShellInfo *info);
+int custom_exit(ShellInfo *info);
+int custom_display_history(ShellInfo *info);
+int custom_unset_alias(ShellInfo *info, char *str);
+int custom_set_alias(ShellInfo *info, char *str);
+int custom_print_alias(Custom_Lists *node);
+int custom_alias(ShellInfo *info);
+
+/*prototypes for tokenizer.c */
+
+char **splitStringByDelimiter(char *str, char delimiter);
+char **splitStringByDelimiters(char *str, char *delimiters);
+
+/*prototypes for variables.c */
+
+int isChainDelimiter(ShellInfo *info, char *buf, size_t *p);
+void checkChain(ShellInfo *info, char *buf, size_t *p, size_t i, size_t len);
+int replaceAliases(ShellInfo *info);
+int replaceVariables(ShellInfo *info);
 int replaceString(char **old, char *new);
 
-/*atoc.c functions prototypes */
+/*prototypes for gtenv. v */
 
-int checkInteractiveMode(ShellInfo *shellInfo);
-int isDelimiter(char character, char *delimiters);
-int isAlphabetic(int character);
-int stringToInteger(char *str);
+char **getEnvironment(ShellInfo *info);
+int unsetEnvironmentVariable(ShellInfo *info, char *variable);
+int setEnvironmentVariable(ShellInfo *info, char *variable, char *value);
 
-/* builtins.c prototypes */
+/*prototypes for enviro.c */
 
-int exitShell(ShellInfo *shellInfo);
-int changeDirectory(ShellInfo *shellInfo);
-int showHelp(ShellInfo *shellInfo);
+int custom_print_environment(ShellInfo *info);
+char *custom_get_environment_variable(ShellInfo *info, const char *name);
+int custom_set_environment_variable(ShellInfo *info);
+int custom_unset_environment_variable(ShellInfo *info);
+int custom_populate_environment_list(ShellInfo *info);
 
- /*okrnizer.c ptotoypes */
-
-char **splitStringByDelimiters(char *str, char *delimiters);
-char **splitStringByDelimiter(char *str, char delimiter);
-
-/* strings1.c protoypes */
-
-char *string_copy(char *destination, char *source);
-char *string_duplicate(const char *str);
-void print_string(char *str);
-int print_character(char c);
-
-/*strings.c prototypes */
-
-int str_length(char *s);
-int str_compare(char *s1, char *s2);
-char *starts_with(const char *haystack, const char *needle);
-char *str_concatenate(char *dest, char *src);
-
-/*shell.c prototypes*/
+/*protypes for shell.c */
 
 int shell_loop(ShellInfo *info, char **av);
 int find_builtin(ShellInfo *info);
 void find_command(ShellInfo *info);
 void fork_command(ShellInfo *info);
-void clear_info(ShellInfo *info);
-int interactive(ShellInfo *info);
-ssize_t get_input(ShellInfo *info);
-void set_info(ShellInfo *info, char **av);
-void write_history(ShellInfo *info);
-void free_info(ShellInfo *info, int mode);
-int my_exit(ShellInfo *info);
-int my_env(ShellInfo *info);
-int my_help(ShellInfo *info);
-int my_history(ShellInfo *info);
-int my_setenv(ShellInfo *info);
-int my_unsetenv(ShellInfo *info);
-int my_cd(ShellInfo *info);
-int my_alias(ShellInfo *info);
-int is_delimiter(char c, char *delimiters);
-int is_command(ShellInfo *info, const char *cmd);
-char *find_path(ShellInfo *info, char *paths, char *cmd);
-char **strtow(char *str, char *delimiters);
-int _strcmp(const char *s1, const char *s2);
-char *starts_with(const char *haystack, const char *needle);
-char *_strcat(char *dest, const char *src);
-int _putchar(char c);
-void _puts(const char *str);
-int _strlen(const char *s);
-void _eputchar(char c);
-char **get_environment(ShellInfo *info);
-char *_getenv(ShellInfo *info, const char *name);
+ /* main */
 
-/*bferr*/
-int bfree(void **ptr);
-char **strtow(char *str, char *d);
-char **strtow2(char *str, char d);
-char *_strcpy(char *dest, char *src);
-char *_strdup(const char *str);
-void _puts(char *str);
-int _putchar(char c);
-int _strlen(char *s);
-int _strcmp(char *s1, char *s2);
-char *starts_with(const char *haystack, const char *needle);
-char *_strcat(char *dest, char *src);
-int hsh(ShellInfo *info, char **av);
-int find_builtin(ShellInfo *info);
-void find_cmd(ShellInfo *info);
-void fork_cmd(ShellInfo *info);
-int _memset(char *s, char b, unsigned int n);
-void ffree(char **pp);
-void *_realloc(void *ptr, unsigned int old_size, unsigned int new_size);
-int is_cmd(ShellInfo *info, char *path);
-char *dup_chars(char *pathstr, int start, int stop);
-char *find_path(ShellInfo *info, char *pathstr, char *cmd);
-int bfree(void **ptr);
-int main(int ac, char **av);
-size_t list_len(const list_t *h);
-char **list_to_strings(list_t *head);
-size_t print_list(const list_t *h);
-list_t *node_starts_with(list_t *node, char *prefix, char c);
-ssize_t get_node_index(list_t *head, list_t *node);
-list_t *add_node(list_t **head, const char *str, int num);
-list_t *add_node_end(list_t **head, const char *str, int num);
-size_t print_list_str(const list_t *h);
-int delete_node_at_index(list_t **head, unsigned int index);
-void free_list(list_t **head_ptr);
+int main(int argc, char **argv);
+
+
+
+
+
+
+
 #endif
