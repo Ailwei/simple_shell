@@ -1,237 +1,132 @@
 #include "shell.h"
 
-int main(int argc, char *argv[])
+/**
+ * sig_handler - Prints a new prompt upon a signal.
+ * @sig: The signal.
+ */
+void sig_handler(int sig)
 {
-    size_t i;
-    char *line;
-    size_t command_length;
-    char *shell_name = "hsh";
-    char command[MAX_COMMAND_LENGTH];
-    char **commands;
+    char *new_prompt = "\n$ ";
 
-    /* Check if a filename is provided as a command line argument */
-    if (argc == 2)
+    (void)sig;
+    signal(SIGINT, sig_handler);
+    write(STDIN_FILENO, new_prompt, 3);
+}
+
+/**
+ * execute - Executes a command in a child process.
+ * @args: An array of arguments.
+ * @front: A double pointer to the beginning of args.
+ *
+ * Return: If an error occurs - a corresponding error code.
+ *         O/w - The exit value of the last executed command.
+ */
+int execute(char **args, char **front)
+{
+    pid_t child_pid;
+    int status, flag = 0, ret = 0;
+    char *command = args[0];
+
+    if (command[0] != '/' && command[0] != '.')
     {
-        FILE *file = fopen(argv[1], "r");
-        if (file == NULL)
-        {
-            perror("Error opening file");
-            return 1;
-        }
+        flag = 1;
+        command = get_location(command);
+    }
 
-        while (fgets(command, sizeof(command), file) != NULL)
-        {
-            /* Remove the trailing newline character */
-            command_length = strlen(command);
-            if (command_length > 0 && command[command_length - 1] == '\n')
-            {
-                command[command_length - 1] = '\0';
-            }
-
-            /* Split the input into commands using ';' */
-            commands = handle_separators(command);
-
-            /* Iterate through the commands and execute them */
-            for (i = 0; commands[i] != NULL; i++)
-            {
-                /* Handle built-in commands, logical operators, and external commands */
-                if (strlen(commands[i]) > 0)
-                {
-                    if (strcmp(commands[i], "exit") == 0)
-                    {
-                        /* Handle the "exit" builtin command */
-                        exit_shell(shell_name);
-                    }
-                    else if (strncmp(commands[i], "exit ", 5) == 0)
-                    {
-                        /* Handle "exit" with status */
-                        const char *status = commands[i] + 5;
-                        handle_exit(status);
-                    }
-                    else if (strcmp(commands[i], "env") == 0)
-                    {
-                        /* Handle the "env" builtin command */
-                        env_builtin(environ);
-                    }
-                    else if (strncmp(commands[i], "setenv ", 7) == 0)
-                    {
-                        /* Handle "setenv" command */
-                        char *arguments = commands[i] + 7;
-                        const char *variable = strtok(arguments, " ");
-                        const char *value = strtok(NULL, " ");
-
-                        if (variable != NULL && value != NULL)
-                        {
-                            if (set_env(variable, value) != 0)
-                            {
-                                perror("Failed to set environment variable");
-                            }
-                        }
-                        else
-                        {
-                            fprintf(stderr, "Usage: setenv VARIABLE VALUE\n");
-                        }
-                    }
-                    else if (strncmp(commands[i], "unsetenv ", 9) == 0)
-                    {
-                        /* Handle "unsetenv" command */
-                        char *variable = commands[i] + 9;
-
-                        if (unset_env(variable) != 0)
-                        {
-                            perror("Failed to unset environment variable");
-                        }
-                    }
-                    else if (strncmp(commands[i], "cd", 2) == 0)
-                    {
-                        /* Handle "cd" command */
-                        const char *directory = commands[i] + 2;
-                        handle_cd(directory);
-                    }
-                    else
-                    {
-                        /* Execute the command with logical operators */
-                        int result = handle_logical_operators(commands[i]);
-                        if (result == -1)
-                        {
-                            fprintf(stderr, "Failed to handle logical operators\n");
-                        }
-                    }
-                }
-            }
-        }
-
-        fclose(file);
+    if (!command || (access(command, F_OK) == -1))
+    {
+        if (errno == EACCES)
+            ret = (create_error(args, 126));
+        else
+            ret = (create_error(args, 127));
     }
     else
     {
-        /* Get the PATH environment variable */
-        char *path_env = getenv("PATH");
-        if (path_env == NULL)
+        child_pid = fork();
+        if (child_pid == -1)
         {
-            perror("Unable to get PATH");
-            return 1;
+            if (flag)
+                free(command);
+            perror("Error child:");
+            return (1);
         }
-
-        while (1)
+        if (child_pid == 0)
         {
-            /* Display the shell prompt */
-            printf("%s> ", shell_name);
-            fflush(stdout);
+            execve(command, args, environ);
+            if (errno == EACCES)
+                ret = (create_error(args, 126));
+            release_env();
+            free_args(args, front);
+            free_alias_list(aliases);
+            _exit(ret);
+        }
+        else
+        {
+            wait(&status);
+            ret = WEXITSTATUS(status);
+        }
+    }
+    if (flag)
+        free(command);
+    return (ret);
+}
 
-            /* Read a command line using custom_getline */
-            line = custom_getline();
+/**
+ * main - Runs a simple UNIX command interpreter.
+ * @argc: The number of arguments supplied to the program.
+ * @argv: An array of pointers to the arguments.
+ *
+ * Return: The return value of the last executed command.
+ */
+int main(int argc, char *argv[])
+{
+    int ret = 0, retn;
+    int *exe_ret = &retn;
+    char *prompt = "$ ", *new_line = "\n";
 
-            /* Check for Ctrl + D (EOF) */
-            if (line == NULL)
-            {
-                printf("\nExiting %s.\n", shell_name);
-                break;
-            }
+    name = argv[0];
+    hist = 1;
+    aliases = NULL;
+    signal(SIGINT, sig_handler);
 
-            /* check if entered command is alias */
-            if (strncmp(line, "alias ", 6) == 0)
-            {
-                alias_builtin(handle_separators(line));
-                continue;
-            }
-            else
-            {
-                /* Split the input into commands using ';' */
-                commands = handle_separators(line);
+    *exe_ret = 0;
+    environ = _copyenv();
+    if (!environ)
+        exit(-100);
 
-                /* Iterate through the commands and execute them */
-                for (i = 0; commands[i] != NULL; i++)
-                {
-                    /* Copy the command to the command buffer */
-                    strncpy(command, commands[i], sizeof(command));
+    if (argc != 1)
+    {
+        ret = proc_file_commands(argv[1], exe_ret);
+        release_env();
+        free_alias_list(aliases);
+        return (*exe_ret);
+    }
 
-                    /* Remove the trailing newline character */
-                    command_length = strlen(command);
-                    if (command_length > 0 && command[command_length - 1] == '\n')
-                    {
-                        command[command_length - 1] = '\0';
-                    }
+    if (!isatty(STDIN_FILENO))
+    {
+        while (ret != END_OF_FILE && ret != EXIT)
+            ret = handle_args(exe_ret);
+        release_env();
+        free_alias_list(aliases);
+        return (*exe_ret);
+    }
 
-                    /* Handle built-in commands, logical operators, and external commands */
-                    if (command_length > 0)
-                    {
-                        if (strcmp(command, "exit") == 0)
-                        {
-                            /* Handle the "exit" builtin command */
-                            exit_shell(shell_name);
-                        }
-                        else if (strncmp(command, "exit ", 5) == 0)
-                        {
-                            /* Handle "exit" with status */
-                            const char *status = command + 5;
-                            handle_exit(status);
-                        }
-                        else if (strcmp(command, "env") == 0)
-                        {
-                            /* Handle the "env" builtin command */
-                            env_builtin(environ);
-                        }
-                        else if (strncmp(command, "setenv ", 7) == 0)
-                        {
-                            /* Handle "setenv" command */
-                            char *arguments = command + 7;
-                            const char *variable = strtok(arguments, " ");
-                            const char *value = strtok(NULL, " ");
-
-                            if (variable != NULL && value != NULL)
-                            {
-                                if (set_env(variable, value) != 0)
-                                {
-                                    perror("Failed to set environment variable");
-                                }
-                            }
-                            else
-                            {
-                                fprintf(stderr, "Usage: setenv VARIABLE VALUE\n");
-                            }
-                        }
-                        else if (strncmp(command, "unsetenv ", 9) == 0)
-                        {
-                            /* Handle "unsetenv" command */
-                            char *variable = command + 9;
-
-                            if (unset_env(variable) != 0)
-                            {
-                                perror("Failed to unset environment variable");
-                            }
-                        }
-                        else if (strncmp(command, "cd", 2) == 0)
-                        {
-                            /* Handle "cd" command */
-                            const char *directory = command + 2;
-                            handle_cd(directory);
-                        }
-                        else
-                        {
-                            /* Execute the command with logical operators */
-                            int result = handle_logical_operators(command);
-                            if (result == -1)
-                            {
-                                fprintf(stderr, "Failed to handle logical operators\n");
-                            }
-                        }
-                    }
-                }
-
-                /* Free the memory allocated for commands */
-                for (i = 0; commands[i] != NULL; i++)
-                {
-                    free(commands[i]);
-                }
-                free(commands);
-
-                /* Free the memory allocated by custom_getline */
-                free(line);
-            }
+    while (1)
+    {
+        write(STDOUT_FILENO, prompt, 2);
+        ret = handle_args(exe_ret);
+        if (ret == END_OF_FILE || ret == EXIT)
+        {
+            if (ret == END_OF_FILE)
+                write(STDOUT_FILENO, new_line, 1);
+            release_env();
+            free_alias_list(aliases);
+            exit(*exe_ret);
         }
     }
 
-    return 0;
+    release_env();
+    free_alias_list(aliases);
+    return (*exe_ret);
 }
 

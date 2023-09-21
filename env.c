@@ -1,44 +1,73 @@
 #include "shell.h"
 
 /**
- * set_environment_variable - Set an environment variable.
- * @variable: The name of the variable to set.
- * @value: The value to assign to the variable.
+ * _copyenv - Creates a copy of the environment.
  *
- * This function sets or modifies an environment variable.
- *
- * Return: 0 on success, 1 on failure.
+ * Return: If an error occurs - NULL.
+ *         Otherwise - a double pointer to the new copy.
  */
-int set_env(const char *variable, const char *value)
+char **_copyenv(void)
 {
-    if (setenv(variable, value, 1) != 0)
+    char **new_env;
+    size_t size;
+    int index;
+
+    for (size = 0; environ[size]; size++)
+        ;
+
+    new_env = malloc(sizeof(char *) * (size + 1));
+    if (!new_env)
+        return (NULL);
+
+    for (index = 0; environ[index]; index++)
     {
-        perror("setenv");
+        new_env[index] = malloc(_strlen(environ[index]) + 1);
 
-        /* Return 1 to indicate failure*/
-
-	return (1);
+        if (!new_env[index])
+        {
+            for (index--; index >= 0; index--)
+                free(new_env[index]);
+            free(new_env);
+            return (NULL);
+        }
+        _strcpy(new_env[index], environ[index]);
     }
-    /*Return 0 to indicate success*/
+    new_env[index] = NULL;
 
-    return (0);
+    return (new_env);
 }
 
 /**
- * unset_environment_variable - Unset an environment variable.
- * @variable: The name of the variable to unset.
- *
- * This function unsets an environment variable.
- *
- * Return: 0 on success, 1 on failure.
+ * Release_env - Frees the copied environment.
  */
-int unset_env(const char *variable)
+void release_env(void)
 {
-    if (unsetenv(variable) != 0)
+    int index;
+
+    for (index = 0; environ[index]; index++)
+        free(environ[index]);
+
+    free(environ);
+}
+
+/**
+ * getenv - Gets an environmental variable from the PATH.
+ * @var: The name of the environmental variable to get.
+ *
+ * Return: If the environmental variable does not exist - NULL.
+ *         Otherwise - a pointer to the environmental variable.
+ */
+char **get_env(const char *var)
+{
+    int index, len;
+
+    len = _strlen(var);
+    for (index = 0; environ[index]; index++)
     {
-        perror("unsetenv");
-        return (1); /* Return 1 to indicate failure*/
+        if (_strncmp(var, environ[index], len) == 0)
+            return (&environ[index]);
     }
-    return (0); /* Return 0 to indicate success*/
+
+    return (NULL);
 }
 
