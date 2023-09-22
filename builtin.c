@@ -1,103 +1,99 @@
 #include "shell.h"
 
 /**
- * custom_exit - Exits the shell
+ * my_exit - exits the shell
  * @info: Structure containing potential arguments. Used to maintain
- *        constant function prototype.
- * Return: Exits with a given exit status
- * (0) if info->command_name != "exit"
+ * constant function prototype.
+ * Return: exits with a given exit status
+ * (0) if info.argv[0] != "exit"
  */
-int custom_exit(ShellInfo *info)
+int my_exit(info_t *info)
 {
-	int exit_code;
+	int exitcheck;
 
-	if (info->arguments[1]) /* If there is an exit argument */
+	if (info->argv[1]) /* If there is an exit arguement */
 	{
-		exit_code = custom_atoi(&info->arguments[1]);
-		if (exit_code == -1)
+		exitcheck = err_atoi(info->argv[1]);
+		if (exitcheck == -1)
 		{
 			info->status = 2;
-			custom_puts_error(ShellInfo, "Illegal number: ");
-			custom_puts_fd(&info->arguments[1]);
-			custom_putchar_fd('\n');
-			return 1;
+			display_error(info, "Illegal number: ");
+			_eputs(info->argv[1]);
+			_eputchar('\n');
+			return (1);
 		}
-		info->error_number = custom_atoi(&info->arguments[1]);
-		return -2;
+		info->err_num = err_atoi(info->argv[1]);
+		return (-2);
 	}
-	info->error_number = -1;
-	return -2;
+	info->err_num = -1;
+	return (-2);
 }
 
 /**
- * custom_change_directory - Changes the current directory of the process
+ * change_directory - changes the current directory of the process
  * @info: Structure containing potential arguments. Used to maintain
- *        constant function prototype.
+ * constant function prototype.
  * Return: Always 0
  */
-int custom_change_directory(ShellInfo *info)
+int change_directory(info_t *info)
 {
-	char *current_directory, *new_directory, buffer[1024];
-	int chdir_result;
+	char *s, *dir, buffer[1024];
+	int chdir_ret;
 
-	current_directory = custom_change_directory(buffer, 1024);
-	if (!current_directory)
-		custom_puts_fd("TODO: >>getcwd failure message here<<\n");
-
-	if (!info->arguments[1])
+	s = getcwd(buffer, 1024);
+	if (!s)
+		print_string("TODO: >>getcwd failure emsg here<<\n");
+	if (!info->argv[1])
 	{
-		new_directory = custom_get_environment_variable(info, "HOME=");
-		if (!new_directory)
-			chdir_result = custom_chdir((new_directory = custom_get_environment_variable(info, "PWD=")) ? new_directory : "/");
+		dir = fetch_env(info, "HOME=");
+		if (!dir)
+			chdir_ret = /* TODO: what should this be? */
+				chdir((dir = fetch_env(info, "PWD=")) ? dir : "/");
 		else
-			chdir_result = custom_chdir(new_directory);
+			chdir_ret = chdir(dir);
 	}
-	else if (custom_help(info->arguments[1], "-") == 0)
+	else if (string_compare(info->argv[1], "-") == 0)
 	{
-		if (!custom_get_environment_variable(info, "OLDPWD="))
+		if (!fetch_env(info, "OLDPWD="))
 		{
-			custom_puts(current_directory);
-			custom_putchar_fd('\n');
-			return 1;
+			print_string(s);
+			_putchar('\n');
+			return (1);
 		}
-		custom_puts(custom_get_environment_variable(info, "OLDPWD="));
-		custom_putchar('\n');
-		chdir_result = custom_chdir((new_directory = custom_get_environment_variable(info, "OLDPWD=")) ? new_directory : "/");
+		print_string(fetch_env(info, "OLDPWD=")), _putchar('\n');
+		chdir_ret = /* TODO: what should this be? */
+			chdir((dir = fetch_env(info, "OLDPWD=")) ? dir : "/");
 	}
 	else
-		chdir_result = custom_chdir(info->arguments[1]);
-
-	if (chdir_result == -1)
+		chdir_ret = chdir(info->argv[1]);
+	if (chdir_ret == -1)
 	{
-		custom_putchar_fd(info, "can't cd to ");
-		custom_puts(info->arguments[1]);
-		custom_putchar('\n');
+		display_error(info, "can't cd to ");
+		print_string(info->argv[1]), _eputchar('\n');
 	}
 	else
 	{
-		custom_set_environment_variable(info, "OLDPWD", custom_get_environment_variable(info, "PWD="));
-		custom_set_environment_variable(info, "PWD",custom_change_directory(buffer, 1024));
+		set_env(info, "OLDPWD", fetch_env(info, "PWD="));
+		set_env(info, "PWD", getcwd(buffer, 1024));
 	}
-
-	return 0;
+	return (0);
 }
 
 /**
- * custom_help - Displays help information
+ * my_help - changes the current directory of the process
  * @info: Structure containing potential arguments. Used to maintain
- *             constant function prototype.
+ * constant function prototype.
  * Return: Always 0
  */
-int custom_help(ShellInfo *info)
+int my_help(info_t *info)
 {
-	char **argument_array;
+	char **arg_array;
 
-	argument_array = &info->arguments;
-	custom_puts("Help call works. Function not yet implemented.\n");
-
+	arg_array = info->argv;
+	print_string("help call works. Function not yet implemented \n");
 	if (0)
-		custom_puts(*argument_array); /* Temporary unused variable workaround */
-
-	return 0;
+		print_string(*arg_array); /* temp att_unused workaround */
+	return (0);
 }
+
 

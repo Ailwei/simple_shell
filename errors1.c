@@ -1,86 +1,141 @@
 #include "shell.h"
 
 /**
- * custom_puts_error - Prints an error string to stderr
- * @error_string: The error string to be printed
- *
- * Return: Nothing
+ * err_atoi - converts a string to an integer
+ * @s: the string to be converted
+ * Return: 0 if no numbers in string, converted number otherwise
+ *       -1 on error
  */
-void custom_puts_error(char *error_string)
+int err_atoi(char *s)
 {
 	int i = 0;
+	unsigned long int result = 0;
 
-	if (!error_string)
-		return;
-	while (error_string[i] != '\0')
+	if (*s == '+')
+		s++;  /* TODO: why does this make main return 255? */
+	for (i = 0;  s[i] != '\0'; i++)
 	{
-		custom_putchar_error(error_string[i]);
-		i++;
+		if (s[i] >= '0' && s[i] <= '9')
+		{
+			result *= 10;
+			result += (s[i] - '0');
+			if (result > INT_MAX)
+				return (-1);
+		}
+		else
+			return (-1);
 	}
+	return (result);
 }
 
 /**
- * custom_putchar_error - Writes the character c to stderr
- * @c: The character to print
- *
- * Return: On success 1.
- * On error, -1 is returned, and errno is set appropriately.
+ * display_error - prints an error message
+ * @info: the parameter & return info struct
+ * @estr: string containing specified error type
+ * Return: 0 if no numbers in string, converted number otherwise
+ *        -1 on error
  */
-int custom_putchar_error(char c)
+void display_error(info_t *info, char *estr)
 {
-	static int i;
-	static char buf[WRITE_BUF_SIZE];
-
-	if (c == CUSTOM_BUF_FLUSH || i >= CUSTOM_WRITE_BUF_SIZE)
-	{
-		write(STDERR_FILENO, buf, i);
-		i = 0;
-	}
-	if (c != CUSTOM_BUF_FLUSH)
-		buf[i++] = c;
-	return (1);
+	_eputs(info->fname);
+	_eputs(": ");
+	print_d(info->line_count, STDERR_FILENO);
+	_eputs(": ");
+	_eputs(info->argv[0]);
+	_eputs(": ");
+	_eputs(estr);
 }
 
 /**
- * custom_putchar_fd - Writes the character c to the given file descriptor
- * @c: The character to print
- * @fd: The file descriptor to write to
+ * print_d - function prints a decimal (integer) number (base 10)
+ * @input: the input
+ * @fd: the filedescriptor to write to
  *
- * Return: On success 1.
- * On error, -1 is returned, and errno is set appropriately.
+ * Return: number of characters printed
  */
-int custom_putchar_fd(char c, int fd)
+int print_d(int input, int fd)
 {
-	static int i;
-	static char buf[WRITE_BUF_SIZE];
+	int (*__putchar)(char) = _putchar;
+	int i, count = 0;
+	unsigned int _abs_, current;
 
-	if (c == CUSTOM_BUF_FLUSH || i >= CUSTOM_WRITE_BUF_SIZE)
+	if (fd == STDERR_FILENO)
+		__putchar = _eputchar;
+	if (input < 0)
 	{
-		write(fd, buf, i);
-		i = 0;
+		_abs_ = -input;
+		__putchar('-');
+		count++;
 	}
-	if (c != CUSTOM_BUF_FLUSH)
-		buf[i++] = c;
-	return (1);
+	else
+		_abs_ = input;
+	current = _abs_;
+	for (i = 1000000000; i > 1; i /= 10)
+	{
+		if (_abs_ / i)
+		{
+			__putchar('0' + current / i);
+			count++;
+		}
+		current %= i;
+	}
+	__putchar('0' + current);
+	count++;
+
+	return (count);
 }
 
 /**
- * custom_puts_fd - Prints an input string to the given file descriptor
- * @str: The string to be printed
- * @fd: The file descriptor to write to
+ * convert_number - converter function, a clone of itoa
+ * @num: number
+ * @base: base
+ * @flags: argument flags
  *
- * Return: The number of characters written
+ * Return: string
  */
-int custom_puts_fd(char *str, int fd)
+char *convert_number(long int num, int base, int flags)
 {
-	int i = 0;
+	static char *array;
+	static char buffer[50];
+	char sign = 0;
+	char *ptr;
+	unsigned long n = num;
 
-	if (!str)
-		return (0);
-	while (*str)
+	if (!(flags & CONVERT_UNSIGNED) && num < 0)
 	{
-		i += custom_putchar_fd(*str++, fd);
+		n = -num;
+		sign = '-';
+
 	}
-	return (i);
+	array = flags & CONVERT_LOWERCASE ? "0123456789abcdef" : "0123456789ABCDEF";
+	ptr = &buffer[49];
+	*ptr = '\0';
+
+	do	{
+		*--ptr = array[n % base];
+		n /= base;
+	} while (n != 0);
+
+	if (sign)
+		*--ptr = sign;
+	return (ptr);
+}
+
+/**
+ * delete_comments - function replaces first instance of '#' with '\0'
+ * @buf: address of the string to modify
+ *
+ * Return: Always 0;
+ */
+void delete_comments(char *buf)
+{
+	int i;
+
+	for (i = 0; buf[i] != '\0'; i++)
+		if (buf[i] == '#' && (!i || buf[i - 1] == ' '))
+		{
+			buf[i] = '\0';
+			break;
+		}
 }
 

@@ -1,18 +1,16 @@
-#ifndef  SHELL_H
-#define SHELL_H
+#ifndef _SHELL_H_
+#define _SHELL_H_
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <fcntl.h>
-#include <signal.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <stddef.h>
+#include <sys/stat.h>
 #include <limits.h>
+#include <fcntl.h>
+#include <errno.h>
 
 /* for read/write buffers */
 #define READ_BUF_SIZE 1024
@@ -35,35 +33,58 @@
 
 #define HIST_FILE	".simple_shell_history"
 #define HIST_MAX	4096
-#define CUSTOM_WRITE_BUF_SIZE 1024
-#define CUSTOM_BUF_FLUSH '\n'
 
 extern char **environ;
 
+
+/**
+ * struct liststr - singly linked list
+ * @num: the number field
+ * @str: a string
+ * @next: points to the next node
+ */
 typedef struct liststr
 {
 	int num;
 	char *str;
 	struct liststr *next;
-} Custom_Lists;
+} list_t;
 
-typedef struct Shellpsser
-
-
+/**
+ * struct passinfo - contains pseudo-arguements to pass into a function,
+ * allowing uniform prototype for function pointer struct
+ * @arg: a string generated from getline containing arguements
+ * @argv:an array of strings generated from arg
+ * @path: a string path for the current command
+ * @argc: the argument count
+ * @line_count: the error count
+ * @err_num: the error code for exit()s
+ * @linecount_flag: if on count this line of input
+ * @fname: the program filename
+ * @env: linked list local copy of environ
+ * @environ: custom modified copy of environ from LL env
+ * @history: the history node
+ * @alias: the alias node
+ * @env_changed: on if environ was changed
+ * @status: the return status of the last exec'd command
+ * @cmd_buf: address of pointer to cmd_buf, on if chaining
+ * @cmd_buf_type: CMD_type ||, &&, ;
+ * @readfd: the fd from which to read line input
+ * @histcount: the history line number count
+ */
+typedef struct passinfo
 {
-
-	int read_file_descriptor;
-	char *arguments;
-	char **argumentVector;
+	char *arg;
+	char **argv;
 	char *path;
 	int argc;
 	unsigned int line_count;
 	int err_num;
 	int linecount_flag;
 	char *fname;
-	Custom_Lists *env;
-	Custom_Lists *history;
-	Custom_Lists *alias;
+	list_t *env;
+	list_t *history;
+	list_t *alias;
 	char **environ;
 	int env_changed;
 	int status;
@@ -72,138 +93,144 @@ typedef struct Shellpsser
 	int cmd_buf_type; /* CMD_type ||, &&, ; */
 	int readfd;
 	int histcount;
-}ShellInfo;
+} info_t;
+
+#define INFO_INIT \
+{NULL, NULL, NULL, 0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, 0, NULL, \
+		0, 0, 0}
+
+/**
+ * struct builtin - contains a builtin string and related function
+ * @type: the builtin command flag
+ * @func: the function
+ */
+typedef struct builtin
+{
+	char *type;
+	int (*func)(info_t *);
+} builtin_table;
 
 
+/* protypes func for shell.c */
+int hsh(info_t *, char **);
+int check_builtin(info_t *);
+void find_command(info_t *);
+void fork_command(info_t *);
 
+/* protype func for parser.c */
+int check_cmd(info_t *, char *);
+char *duplicate_chars(char *, int, int);
+char *find_path(info_t *, char *, char *);
 
+/* loophsh.c */
+int loophsh(char **);
 
+/* prototype funct for errors.c */
+void _eputs(char *);
+int _eputchar(char);
+int _put_file_des(char c, int fd);
+int _puts_file_des(char *str, int fd);
 
+/* prototype funct for string.c */
+int string_length(char *);
+int string_compare(char *, char *);
+char *begin_with(const char *, const char *);
+char *string_concatenate(char *, char *);
 
-/* functions prototypes atoic.c*/
+/* protype funct string1.c */
+char *string_copy(char *, char *);
+char *string_duplicate(const char *);
+void print_string(char *);
+int _putchar(char);
 
-int custom_atoi(char *s);
-int custom_is_alpha(int c);
-int is_delimiter(char c, char *delimiter_str);
-int is_interactive(ShellInfo *info);
+/* prototype function  for exits.c */
+char *string_cpy(char *, char *, int);
+char *string_cat(char *, char *, int);
+char *string_char(char *, char);
 
-/* functions prototypes errors */
+/* prototype func for _tokenizer.c */
+char **str_split(char *, char *);
+char **str_split2(char *, char);
 
-void custom_puts_error(char *error_string);
-int custom_putchar_error(char c);
-int custom_putchar_fd(char c, int fd);
-int custom_puts_fd(char *str, int fd);
-int custom_atoi(char *str);
-void print_custom_error(ShellInfo *info, char *error_type);
-int print_custom_d(int input, int fd);
-char *custom_convert_number(long int num, int base, int flags);
-void remove_custom_comments(char *buf);
+/* protype funct for realloc.c */
+char *set_memo(char *, char, unsigned int);
+void free_string(char **);
+void *realloc_memo(void *, unsigned int, unsigned int);
 
-/* functions getlineinfo.c */
+/* prototype funct for _memory.c */
+int bfree(void **);
 
-void freeShellInfo(ShellInfo *info, int all);
-void setShellInfo(ShellInfo *info, char **av);
-void initializeShellInfo(ShellInfo *info);
-void blockCtrlC(__attribute__((unused)) int sigNum);
-int customGetline(ShellInfo *info, char **pointer, size_t *length);
-ssize_t readBuffer(ShellInfo *info, char *buffer, size_t *currentIndex);
-ssize_t getInput(ShellInfo *info);
-ssize_t bufferInput(ShellInfo *info, char **buffer, size_t *bufferSize);
+/* prototypes for atoi.c */
+int is_interactive(info_t *);
+int check_delimiters(char, char *);
+int check_alpha(int);
+int convert_str_int(char *);
 
-/* functions protypes memory.c  */
+/* prototype fun for errors1.c */
+int err_atoi(char *);
+void display_error(info_t *, char *);
+int print_d(int, int);
+char *convert_number(long int, int, int);
+void delete_comments(char *);
 
-int bfree(void **ptr);
+/* protypes function for _builtin.c */
+int my_exit(info_t *);
+int change_directory(info_t *);
+int my_help(info_t *);
 
-/*protypes of history.c */
+/* protypes for builtins.c */
+int my_history(info_t *);
+int my_alias(info_t *);
 
-int renumber_history_entries(ShellInfo *info);
-int add_history_entry(ShellInfo *info, char *entry, int linecount);
-int read_history_from_file(ShellInfo *info);
-int write_history_to_file(ShellInfo *info);
-char *get_history_filename(ShellInfo *info);
+/*protype func for getline.c */
+ssize_t get_input(info_t *);
+int custom_getline(info_t *, char **, size_t *);
+void sigintHandler(int);
 
-/*prototypes of parser.c */
+/* protype func for getinfo.c */
+void remove_info(info_t *);
+void create_info(info_t *, char **);
+void free_info(info_t *, int);
 
-char *find_command_path(ShellInfo *info, char *pathstr, char *cmd);
-char *duplicate_chars(char *pathstr, int start, int stop);
-int is_executable(ShellInfo *info, char *path);
+/* prototypes function for _environ.c */
+char *fetch_env(info_t *, const char *);
+int print_env(info_t *);
+int my_setenv(info_t *);
+int my_unsetenv(info_t *);
+int fill_env_list(info_t *);
 
-/*prototypes of strings */
+/* prottotype funct for getenv.c */
+char **fetch_environ(info_t *);
+int unset_env(info_t *, char *);
+int set_env(info_t *, char *, char *);
 
-int print_character(char c);
-void print_string(char *str);
-char *string_duplicate(const char *str);
-char *string_copy(char *destination, char *source);
-char *str_concatenate(char *dest, char *src);
-char *starts_with(const char *haystack, const char *needle);
-int str_compare(char *s1, char *s2);
-int str_length(char *s);
+/* prototype funct for _history.c */
+char *get_history_file(info_t *info);
+int write_history(info_t *info);
+int read_history(info_t *info);
+int build_history_list(info_t *info, char *buf, int linecount);
+int renumber_history(info_t *info);
 
-/*prototypes of lists */
+/* prototypes funct for lists.c */
+list_t *add_node(list_t **, const char *, int);
+list_t *add_node_end(list_t **, const char *, int);
+size_t display_list_str(const list_t *);
+int remove_node_at_index(list_t **, unsigned int);
+void free_list(list_t **);
 
-ssize_t custom_get_node_index(Custom_Lists *head, Custom_Lists *node);
-Custom_Lists *custom_list_starts_with(Custom_Lists *node, char *prefix, char c);
-size_t custom_list_print(const Custom_Lists *head);
-char **custom_list_to_strings(Custom_Lists *head);
-size_t custom_list_length(const Custom_Lists *head);
-void custom_free_list(Custom_Lists **head_ptr);
-int custom_delete_node_at_index(Custom_Lists **head, unsigned int index);
-size_t custom_print_list_data(const Custom_Lists *h);
-Custom_Lists *add_custom_node_end(Custom_Lists **head, const char *data, int number);
-Custom_Lists *add_custom_node(Custom_Lists **head, const char *data, int number);
+/* prototype funct for _lists1.c */
+size_t list_length(const list_t *);
+char **list_to_str(list_t *);
+size_t display_list(const list_t *);
+list_t *node_begin_with(list_t *, char *, char);
+ssize_t fetch_node_index(list_t *, list_t *);
 
-/*prototypes for builtin */
-
-int custom_help(ShellInfo *info);
-int custom_change_directory(ShellInfo *info);
-int custom_exit(ShellInfo *info);
-int custom_display_history(ShellInfo *info);
-int custom_unset_alias(ShellInfo *info, char *str);
-int custom_set_alias(ShellInfo *info, char *str);
-int custom_print_alias(Custom_Lists *node);
-int custom_alias(ShellInfo *info);
-
-/*prototypes for tokenizer.c */
-
-char **splitStringByDelimiter(char *str, char delimiter);
-char **splitStringByDelimiters(char *str, char *delimiters);
-
-/*prototypes for variables.c */
-
-int isChainDelimiter(ShellInfo *info, char *buf, size_t *p);
-void checkChain(ShellInfo *info, char *buf, size_t *p, size_t i, size_t len);
-int replaceAliases(ShellInfo *info);
-int replaceVariables(ShellInfo *info);
-int replaceString(char **old, char *new);
-
-/*prototypes for gtenv. v */
-
-char **getEnvironment(ShellInfo *info);
-int unsetEnvironmentVariable(ShellInfo *info, char *variable);
-int setEnvironmentVariable(ShellInfo *info, char *variable, char *value);
-
-/*prototypes for enviro.c */
-
-int custom_print_environment(ShellInfo *info);
-char *custom_get_environment_variable(ShellInfo *info, const char *name);
-int custom_set_environment_variable(ShellInfo *info);
-int custom_unset_environment_variable(ShellInfo *info);
-int custom_populate_environment_list(ShellInfo *info);
-
-/*protypes for shell.c */
-
-int shell_loop(ShellInfo *info, char **av);
-int find_builtin(ShellInfo *info);
-void find_command(ShellInfo *info);
-void fork_command(ShellInfo *info);
- /* main */
-
-int main(int argc, char **argv);
-
-
-
-
-
-
+/* prototype functions for vars.c */
+int is_chain_delim(info_t *, char *, size_t *);
+void check_chain(info_t *, char *, size_t *, size_t, size_t);
+int replace_alias(info_t *);
+int replace_variables(info_t *);
+int replace_str(char **, char *);
 
 #endif
+

@@ -1,74 +1,74 @@
 #include "shell.h"
 
 /**
- * initializeShellInfo - initializes ShellInfo struct
- * @info: pointer to ShellInfo struct
+ * remove_info - initializes info_t struct
+ * @info: struct address
  */
-void initializeShellInfo(ShellInfo *info)
+void remove_info(info_t *info)
 {
-    info->arguments = NULL;
-    info->argumentVector = NULL;
-    info->executablePath = NULL;
-    info->argumentCount = 0;
+	info->arg = NULL;
+	info->argv = NULL;
+	info->path = NULL;
+	info->argc = 0;
 }
 
 /**
- * setShellInfo - sets values in ShellInfo struct
- * @info: pointer to ShellInfo struct
+ * create_info - initializes info_t struct
+ * @info: struct address
  * @av: argument vector
  */
-void setShellInfo(ShellInfo *info, char **av)
+void create_info(info_t *info, char **av)
 {
-    int i = 0;
+	int i = 0;
 
-    info->programName = av[0];
-    if (info->arguments)
-    {
-        info->argumentVector = stringToWords(info->arguments, " \t");
-        if (!info->argumentVector)
-        {
-            info->argumentVector = malloc(sizeof(char *) * 2);
-            if (info->argumentVector)
-            {
-                info->argumentVector[0] =  replaceString(info->arguments);
-                info->argumentVector[1] = NULL;
-            }
-        }
-        for (i = 0; info->argumentVector && info->argumentVector[i]; i++)
-            ;
-        info->argumentCount = i;
+	info->fname = av[0];
+	if (info->arg)
+	{
+		info->argv = str_split(info->arg, " \t");
+		if (!info->argv)
+		{
+			info->argv = malloc(sizeof(char *) * 2);
+			if (info->argv)
+			{
+				info->argv[0] = string_duplicate(info->arg);
+				info->argv[1] = NULL;
+			}
+		}
+		for (i = 0; info->argv && info->argv[i]; i++)
+			;
+		info->argc = i;
 
-        replaceAliases(info);
-        replaceVariables(info);
-    }
+		replace_alias(info);
+		replace_variables(info);
+	}
 }
 
 /**
- * freeShellInfo - frees fields in ShellInfo struct
- * @info: pointer to ShellInfo struct
+ * free_info - frees info_t struct fields
+ * @info: struct address
  * @all: true if freeing all fields
  */
-void freeShellInfo(ShellInfo *info, int all)
+void free_info(info_t *info, int all)
 {
-    freeStringArray(info->argumentVector);
-    info->argumentVector = NULL;
-    info->executablePath = NULL;
-    if (all)
-    {
-        if (!info->commandBuffer)
-            free(info->arguments);
-        if (info->environmentVariables)
-            freeStringList(&(info->environmentVariables));
-        if (info->commandHistory)
-            freeStringList(&(info->commandHistory));
-        if (info->aliases)
-            freeStringList(&(info->aliases));
-        freeStringArray(info->environ);
-        info->environ = NULL;
-        free(info->commandBuffer);
-        if (info->readFileDescriptor > 2)
-            close(info->readFileDescriptor);
-        flushStandardOutputBuffer();
-    }
+	free_string(info->argv);
+	info->argv = NULL;
+	info->path = NULL;
+	if (all)
+	{
+		if (!info->cmd_buf)
+			free(info->arg);
+		if (info->env)
+			free_list(&(info->env));
+		if (info->history)
+			free_list(&(info->history));
+		if (info->alias)
+			free_list(&(info->alias));
+		free_string(info->environ);
+			info->environ = NULL;
+		bfree((void **)info->cmd_buf);
+		if (info->readfd > 2)
+			close(info->readfd);
+		_putchar(BUF_FLUSH);
+	}
 }
 

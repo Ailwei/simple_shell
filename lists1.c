@@ -1,124 +1,123 @@
 #include "shell.h"
 
 /**
- * custom_list_length - determines the length of a custom linked list
- * @head: pointer to the first node
+ * list_length - determines length of linked list
+ * @h: pointer to first node
  *
- * Return: size of the list
+ * Return: size of list
  */
-size_t custom_list_length(const CustomList *head)
+size_t list_length(const list_t *h)
 {
-    size_t count = 0;
+	size_t i = 0;
 
-    while (head)
-    {
-        head = head->next;
-        count++;
-    }
-    return count;
+	while (h)
+	{
+		h = h->next;
+		i++;
+	}
+	return (i);
 }
 
 /**
- * custom_list_to_strings - returns an array of strings from a custom linked list
- * @head: pointer to the first node
+ * list_to_str - returns an array of strings of the list->str
+ * @head: pointer to first node
  *
  * Return: array of strings
  */
-char **custom_list_to_strings(CustomList *head)
+char **list_to_str(list_t *head)
 {
-    CustomList *node = head;
-    size_t size = custom_list_length(head);
-    char **strings;
-    char *string;
+	list_t *node = head;
+	size_t i = list_length(head), j;
+	char **strs;
+	char *str;
 
-    if (!head || !size)
-        return NULL;
+	if (!head || !i)
+		return (NULL);
+	strs = malloc(sizeof(char *) * (i + 1));
+	if (!strs)
+		return (NULL);
+	for (i = 0; node; node = node->next, i++)
+	{
+		str = malloc(string_length(node->str) + 1);
+		if (!str)
+		{
+			for (j = 0; j < i; j++)
+				free(strs[j]);
+			free(strs);
+			return (NULL);
+		}
 
-    strings = malloc(sizeof(char *) * (size + 1));
-    if (!strings)
-        return NULL;
-
-    for (size_t i = 0; node; node = node->next, i++)
-    {
-        string = malloc(_custom_strlen(node->data) + 1);
-        if (!string)
-        {
-            for (size_t j = 0; j < i; j++)
-                free(strings[j]);
-            free(strings);
-            return NULL;
-        }
-
-        string = _custom_strcpy(string, node->data);
-        strings[i] = string;
-    }
-    strings[size] = NULL;
-    return strings;
+		str = string_copy(str, node->str);
+		strs[i] = str;
+	}
+	strs[i] = NULL;
+	return (strs);
 }
 
+
 /**
- * custom_list_print - prints all elements of a custom linked list
- * @head: pointer to the first node
+ * display_list - prints all elements of a list_t linked list
+ * @h: pointer to first node
  *
- * Return: size of the list
+ * Return: size of list
  */
-size_t custom_list_print(const CustomList *head)
+size_t display_list(const list_t *h)
 {
-    size_t count = 0;
+	size_t i = 0;
 
-    while (head)
-    {
-        _custom_puts(convert_number(head->number, 10, 0));
-        _custom_putchar(':');
-        _custom_putchar(' ');
-        _custom_puts(head->data ? head->data : "(nil)");
-        _custom_puts("\n");
-        head = head->next;
-        count++;
-    }
-    return count;
+	while (h)
+	{
+		print_string(convert_number(h->num, 10, 0));
+		_putchar(':');
+		_putchar(' ');
+		print_string(h->str ? h->str : "(nil)");
+		print_string("\n");
+		h = h->next;
+		i++;
+	}
+	return (i);
 }
 
 /**
- * custom_list_starts_with - returns the node whose string starts with a prefix
- * @node: pointer to the custom list head
+ * node_begin_with - returns node whose string starts with prefix
+ * @node: pointer to list head
  * @prefix: string to match
- * @c: the next character after the prefix to match
+ * @c: the next character after prefix to match
  *
- * Return: matching node or NULL
+ * Return: match node or null
  */
-CustomList *custom_list_starts_with(CustomList *node, char *prefix, char c)
+list_t *node_begin_with(list_t *node, char *prefix, char c)
 {
-    char *p = NULL;
+	char *p = NULL;
 
-    while (node)
-    {
-        p = custom_starts_with(node->data, prefix);
-        if (p && ((c == -1) || (*p == c)))
-            return node;
-        node = node->next;
-    }
-    return NULL;
+	while (node)
+	{
+		p = begin_with(node->str, prefix);
+		if (p && ((c == -1) || (*p == c)))
+			return (node);
+		node = node->next;
+	}
+	return (NULL);
 }
 
 /**
- * custom_get_node_index - gets the index of a node in a custom list
- * @head: pointer to the custom list head
+ * fetch_node_index - gets the index of a node
+ * @head: pointer to list head
  * @node: pointer to the node
  *
- * Return: index of the node or -1
+ * Return: index of node or -1
  */
-ssize_t custom_get_node_index(CustomList *head, CustomList *node)
+ssize_t fetch_node_index(list_t *head, list_t *node)
 {
-    size_t index = 0;
+	size_t i = 0;
 
-    while (head)
-    {
-        if (head == node)
-            return index;
-        head = head->next;
-        index++;
-    }
-    return -1;
+	while (head)
+	{
+		if (head == node)
+			return (i);
+		head = head->next;
+		i++;
+	}
+	return (-1);
 }
 

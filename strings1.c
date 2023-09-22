@@ -2,24 +2,24 @@
 
 /**
  * string_copy - copies a string
- * @destination: the destination
- * @source: the source
+ * @dest: the destination
+ * @src: the source
  *
  * Return: pointer to destination
  */
-char *string_copy(char *destination, char *source)
+char *string_copy(char *dest, char *src)
 {
-	int index = 0;
+	int i = 0;
 
-	if (destination == source || source == 0)
-		return (destination);
-	while (source[index])
+	if (dest == src || src == 0)
+		return (dest);
+	while (src[i])
 	{
-		destination[index] = source[index];
-		index++;
+		dest[i] = src[i];
+		i++;
 	}
-	destination[index] = 0;
-	return (destination);
+	dest[i] = 0;
+	return (dest);
 }
 
 /**
@@ -31,18 +31,18 @@ char *string_copy(char *destination, char *source)
 char *string_duplicate(const char *str)
 {
 	int length = 0;
-	char *result;
+	char *ret;
 
 	if (str == NULL)
 		return (NULL);
 	while (*str++)
 		length++;
-	result = malloc(sizeof(char) * (length + 1));
-	if (!result)
+	ret = malloc(sizeof(char) * (length + 1));
+	if (!ret)
 		return (NULL);
 	for (length++; length--;)
-		result[length] = *--str;
-	return (result);
+		ret[length] = *--str;
+	return (ret);
 }
 
 /**
@@ -53,36 +53,36 @@ char *string_duplicate(const char *str)
  */
 void print_string(char *str)
 {
-	int index = 0;
+	int i = 0;
 
 	if (!str)
 		return;
-	while (str[index] != '\0')
+	while (str[i] != '\0')
 	{
-		print_character(str[index]);
-		index++;
+		_putchar(str[i]);
+		i++;
 	}
 }
 
 /**
- * print_character - writes the character c to stdout
+ * _putchar - writes the character c to stdout
  * @c: The character to print
  *
  * Return: On success 1.
  * On error, -1 is returned, and errno is set appropriately.
  */
-int print_character(char c)
+int _putchar(char c)
 {
-	static int index;
-	static char buffer[WRITE_BUFFER_SIZE];
+	static int i;
+	static char buf[WRITE_BUF_SIZE];
 
-	if (c == BUFFER_FLUSH || index >= WRITE_BUFFER_SIZE)
+	if (c == BUF_FLUSH || i >= WRITE_BUF_SIZE)
 	{
-		write(1, buffer, index);
-		index = 0;
+		write(1, buf, i);
+		i = 0;
 	}
-	if (c != BUFFER_FLUSH)
-		buffer[index++] = c;
+	if (c != BUF_FLUSH)
+		buf[i++] = c;
 	return (1);
 }
 

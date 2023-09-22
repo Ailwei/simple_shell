@@ -1,179 +1,171 @@
 #include "shell.h"
 
 /**
- * bufferInput - buffers chained commands
- * @info: Pointer to ShellInfo struct
- * @buffer: Address of buffer
- * @bufferSize: Address of buffer size variable
+ * input_buf - buffers chained commands
+ * @info: parameter struct
+ * @buf: address of buffer
+ * @len: address of len var
  *
- * Return: Bytes read
+ * Return: bytes read
  */
-ssize_t bufferInput(ShellInfo *info, char **buffer, size_t *bufferSize)
+ssize_t input_buf(info_t *info, char **buf, size_t *len)
 {
-    ssize_t bytesRead = 0;
-    size_t currentSize = 0;
+	ssize_t r = 0;
+	size_t len_p = 0;
 
-    if (!*bufferSize)
-    {
-        free(*buffer);
-        *buffer = NULL;
-        signal(SIGINT, blockCtrlC);
-        bytesRead = getline(buffer, &currentSize, stdin);
-
-        if (bytesRead > 0)
-        {
-            if ((*buffer)[bytesRead - 1] == '\n')
-            {
-                (*buffer)[bytesRead - 1] = '\0'; /* Remove trailing newline */
-                bytesRead--;
-            }
-            info->linecountFlag = 1;
-            removeComments(*buffer);
-            addToHistory(info, *buffer);
-            *bufferSize = bytesRead;
-            info->commandBuffer = buffer;
-        }
-    }
-
-    return bytesRead;
+	if (!*len) /* if nothing left in the buffer, fill it */
+	{
+		/*bfree((void **)info->cmd_buf);*/
+		free(*buf);
+		*buf = NULL;
+		signal(SIGINT, sigintHandler);
+#if USE_GETLINE
+		r = getline(buf, &len_p, stdin);
+#else
+		r = custom_getline(info, buf, &len_p);
+#endif
+		if (r > 0)
+		{
+			if ((*buf)[r - 1] == '\n')
+			{
+				(*buf)[r - 1] = '\0'; /* remove trailing newline */
+				r--;
+			}
+			info->linecount_flag = 1;
+			delete_comments(*buf);
+			build_history_list(info, *buf, info->histcount++);
+			/* if (_strchr(*buf, ';')) is this a command chain? */
+			{
+				*len = r;
+				info->cmd_buf = buf;
+			}
+		}
+	}
+	return (r);
 }
 
 /**
- * getInput - gets a line minus the newline
- * @info: Pointer to ShellInfo struct
+ * get_input - gets a line minus the newline
+ * @info: parameter struct
  *
- * Return: Bytes read
+ * Return: bytes read
  */
-ssize_t getInput(ShellInfo *info)
+ssize_t get_input(info_t *info)
 {
-    static char *buffer; /* The ';' command chain buffer */
-    static size_t currentIndex, lastIndex, bufferSize;
-    ssize_t bytesRead = 0;
-    char **currentBuffer = &(info->argument), *ptr;
+	static char *buf; /* the ';' command chain buffer */
+	static size_t i, j, len;
+	ssize_t r = 0;
+	char **buf_p = &(info->arg), *p;
 
-    _putchar(BUF_FLUSH);
-    bytesRead = bufferInput(info, &buffer, &bufferSize);
+	_putchar(BUF_FLUSH);
+	r = input_buf(info, &buf, &len);
+	if (r == -1) /* EOF */
+		return (-1);
+	if (len) /* we have commands left in the chain buffer */
+	{
+		j = i; /* init new iterator to current buf position */
+		p = buf + i; /* get pointer for return */
 
-    if (bytesRead == -1) /* EOF */
-        return -1;
+		check_chain(info, buf, &j, i, len);
+		while (j < len) /* iterate to semicolon or end */
+		{
+			if (is_chain_delim(info, buf, &j))
+				break;
+			j++;
+		}
 
-    if (bufferSize) /* We have commands left in the chain buffer */
-    {
-        lastIndex = currentIndex; /* Initialize new iterator to current buffer position */
-        ptr = buffer + currentIndex; /* Get pointer for return */
-        checkCommandChain(info, buffer, &lastIndex, currentIndex, bufferSize);
+		i = j + 1; /* increment past nulled ';'' */
+		if (i >= len) /* reached end of buffer? */
+		{
+			i = len = 0; /* reset position and length */
+			info->cmd_buf_type = CMD_NORM;
+		}
 
-        while (lastIndex < bufferSize) /* Iterate to semicolon or end */
-        {
-            if (isCommandChain(info, buffer, &lastIndex))
-                break;
-            lastIndex++;
-        }
+		*buf_p = p; /* pass back pointer to current command position */
+		return (string_length(p)); /* return length of current command */
+	}
 
-        currentIndex = lastIndex + 1; /* Increment past nulled ';' */
-        if (currentIndex >= bufferSize) /* Reached the end of the buffer? */
-        {
-            currentIndex = bufferSize = 0; /* Reset position and length */
-            info->commandBufferType = CMD_NORMAL;
-        }
-
-        *currentBuffer = ptr; /* Pass back pointer to the current command position */
-        return _strlen(ptr); /* Return the length of the current command */
-    }
-
-    *currentBuffer = buffer; /* Not a chain; pass back buffer from getline() */
-    return bytesRead; /* Return length of buffer from getline() */
+	*buf_p = buf; /* else not a chain, pass back buffer from _getline() */
+	return (r); /* return length of buffer from _getline() */
 }
 
 /**
- * readBuffer - reads a buffer
- * @info: Pointer to ShellInfo struct
- * @buffer: Buffer
- * @currentIndex: Size
+ * read_buf - reads a buffer
+ * @info: parameter struct
+ * @buf: buffer
+ * @i: size
  *
- * Return: bytesRead
+ * Return: r
  */
-ssize_t readBuffer(ShellInfo *info, char *buffer, size_t *currentIndex)
+ssize_t read_buf(info_t *info, char *buf, size_t *i)
 {
-    ssize_t bytesRead = 0;
+	ssize_t r = 0;
 
-    if (*currentIndex)
-        return 0;
-
-    bytesRead = read(info->readfd, buffer, READ_BUFFER_SIZE);
-
-    if (bytesRead >= 0)
-        *currentIndex = bytesRead;
-
-    return bytesRead;
+	if (*i)
+		return (0);
+	r = read(info->readfd, buf, READ_BUF_SIZE);
+	if (r >= 0)
+		*i = r;
+	return (r);
 }
 
 /**
- * customGetline - gets the next line of input from STDIN
- * @info: Pointer to ShellInfo struct
- * @pointer: Address of pointer to buffer, preallocated or NULL
- * @length: Size of preallocated pointer buffer if not NULL
+ * custom_getline - gets the next line of input from STDIN
+ * @info: parameter struct
+ * @ptr: address of pointer to buffer, preallocated or NULL
+ * @length: size of preallocated ptr buffer if not NULL
  *
- * Return: bytesRead
+ * Return: s
  */
-int customGetline(ShellInfo *info, char **pointer, size_t *length)
+int custom_getline(info_t *info, char **ptr, size_t *length)
 {
-    static char buffer[READ_BUFFER_SIZE];
-    static size_t currentIndex = 0, bufferLength = 0;
-    size_t k;
-    ssize_t bytesRead = 0, totalBytesRead = 0;
-    char *p = NULL, *newPointer = NULL, *c;
+	static char buf[READ_BUF_SIZE];
+	static size_t i, len;
+	size_t k;
+	ssize_t r = 0, s = 0;
+	char *p = NULL, *new_p = NULL, *c;
 
-    p = *pointer;
-    if (p && length)
-        totalBytesRead = *length;
+	p = *ptr;
+	if (p && length)
+		s = *length;
+	if (i == len)
+		i = len = 0;
 
-    if (currentIndex == bufferLength)
-    {
-        currentIndex = bufferLength = 0;
-    }
+	r = read_buf(info, buf, &len);
+	if (r == -1 || (r == 0 && len == 0))
+		return (-1);
 
-    bytesRead = readBuffer(info, buffer, &bufferLength);
+	c = string_char(buf + i, '\n');
+	k = c ? 1 + (unsigned int)(c - buf) : len;
+	new_p = realloc_memo(p, s, s ? s + k : k + 1);
+	if (!new_p) /* MALLOC FAILURE! */
+		return (p ? free(p), -1 : -1);
 
-    if (bytesRead == -1 || (bytesRead == 0 && bufferLength == 0))
-        return -1;
+	if (s)
+		string_cat(new_p, buf + i, k - i);
+	else
+		string_cpy(new_p, buf + i, k - i + 1);
 
-    c = _strchr(buffer + currentIndex, '\n');
-    k = c ? 1 + (unsigned int)(c - buffer) : bufferLength;
+	s += k - i;
+	i = k;
+	p = new_p;
 
-    newPointer = _realloc(p, totalBytesRead, totalBytesRead ? totalBytesRead + k : k + 1);
-    if (!newPointer) /* MALLOC FAILURE! */
-    {
-        if (p)
-            free(p);
-        return -1;
-    }
-
-    if (totalBytesRead)
-        _strncat(newPointer, buffer + currentIndex, k - currentIndex);
-    else
-        _strncpy(newPointer, buffer + currentIndex, k - currentIndex + 1);
-
-    totalBytesRead += k - currentIndex;
-    currentIndex = k;
-    p = newPointer;
-
-    if (length)
-        *length = totalBytesRead;
-    *pointer = p;
-    return totalBytesRead;
+	if (length)
+		*length = s;
+	*ptr = p;
+	return (s);
 }
 
 /**
- * blockCtrlC - blocks ctrl-C
- * @sigNum: The signal number
+ * sigintHandler - blocks ctrl-C
+ * @sig_num: the signal number
  *
  * Return: void
  */
-void blockCtrlC(__attribute__((unused)) int sigNum)
+void sigintHandler(__attribute__((unused))int sig_num)
 {
-    _puts("\n");
-    _puts("$ ");
-    _putchar(BUF_FLUSH);
+	print_string("\n");
+	print_string("$ ");
+	_putchar(BUF_FLUSH);
 }
 

@@ -1,28 +1,28 @@
 #include "shell.h"
 
 /**
- * add_custom_node - adds a custom node to the start of the list
+ * add_node - adds a node to the start of the list
  * @head: address of pointer to head node
- * @data: data field of the node
- * @number: node index used by history
+ * @str: str field of node
+ * @num: node index used by history
  *
- * Return: pointer to the new node
+ * Return: size of list
  */
-CustomList *add_custom_node(CustomList **head, const char *data, int number)
+list_t *add_node(list_t **head, const char *str, int num)
 {
-	CustomList *new_head;
+	list_t *new_head;
 
 	if (!head)
 		return (NULL);
-	new_head = malloc(sizeof(CustomList));
+	new_head = malloc(sizeof(list_t));
 	if (!new_head)
 		return (NULL);
-	_custom_memset((void *)new_head, 0, sizeof(CustomList));
-	new_head->number = number;
-	if (data)
+	set_memo((void *)new_head, 0, sizeof(list_t));
+	new_head->num = num;
+	if (str)
 	{
-		new_head->data = _custom_strdup(data);
-		if (!new_head->data)
+		new_head->str = string_duplicate(str);
+		if (!new_head->str)
 		{
 			free(new_head);
 			return (NULL);
@@ -34,30 +34,30 @@ CustomList *add_custom_node(CustomList **head, const char *data, int number)
 }
 
 /**
- * add_custom_node_end - adds a custom node to the end of the list
+ * add_node_end - adds a node to the end of the list
  * @head: address of pointer to head node
- * @data: data field of the node
- * @number: node index used by history
+ * @str: str field of node
+ * @num: node index used by history
  *
- * Return: pointer to the new node
+ * Return: size of list
  */
-CustomList *add_custom_node_end(CustomList **head, const char *data, int number)
+list_t *add_node_end(list_t **head, const char *str, int num)
 {
-	CustomList *new_node, *node;
+	list_t *new_node, *node;
 
 	if (!head)
 		return (NULL);
 
 	node = *head;
-	new_node = malloc(sizeof(CustomList));
+	new_node = malloc(sizeof(list_t));
 	if (!new_node)
 		return (NULL);
-	_custom_memset((void *)new_node, 0, sizeof(CustomList));
-	new_node->number = number;
-	if (data)
+	set_memo((void *)new_node, 0, sizeof(list_t));
+	new_node->num = num;
+	if (str)
 	{
-		new_node->data = _custom_strdup(data);
-		if (!new_node->data)
+		new_node->str = string_duplicate(str);
+		if (!new_node->str)
 		{
 			free(new_node);
 			return (NULL);
@@ -75,19 +75,19 @@ CustomList *add_custom_node_end(CustomList **head, const char *data, int number)
 }
 
 /**
- * custom_print_list_data - prints only the data element of a custom list
+ * display_list_str - prints only the str element of a list_t linked list
  * @h: pointer to first node
  *
  * Return: size of list
  */
-size_t custom_print_list_data(const CustomList *h)
+size_t display_list_str(const list_t *h)
 {
 	size_t i = 0;
 
 	while (h)
 	{
-		_custom_puts(h->data ? h->data : "(nil)");
-		_custom_puts("\n");
+		print_string(h->str ? h->str : "(nil)");
+		print_string("\n");
 		h = h->next;
 		i++;
 	}
@@ -95,15 +95,15 @@ size_t custom_print_list_data(const CustomList *h)
 }
 
 /**
- * custom_delete_node_at_index - deletes a custom node at a given index
+ * remove_node_at_index - deletes node at given index
  * @head: address of pointer to first node
  * @index: index of node to delete
  *
  * Return: 1 on success, 0 on failure
  */
-int custom_delete_node_at_index(CustomList **head, unsigned int index)
+int remove_node_at_index(list_t **head, unsigned int index)
 {
-	CustomList *node, *prev_node;
+	list_t *node, *prev_node;
 	unsigned int i = 0;
 
 	if (!head || !*head)
@@ -113,7 +113,7 @@ int custom_delete_node_at_index(CustomList **head, unsigned int index)
 	{
 		node = *head;
 		*head = (*head)->next;
-		free(node->data);
+		free(node->str);
 		free(node);
 		return (1);
 	}
@@ -123,7 +123,7 @@ int custom_delete_node_at_index(CustomList **head, unsigned int index)
 		if (i == index)
 		{
 			prev_node->next = node->next;
-			free(node->data);
+			free(node->str);
 			free(node);
 			return (1);
 		}
@@ -135,14 +135,14 @@ int custom_delete_node_at_index(CustomList **head, unsigned int index)
 }
 
 /**
- * custom_free_list - frees all nodes of a custom list
+ * free_list - frees all nodes of a list
  * @head_ptr: address of pointer to head node
  *
  * Return: void
  */
-void custom_free_list(CustomList **head_ptr)
+void free_list(list_t **head_ptr)
 {
-	CustomList *node, *next_node, *head;
+	list_t *node, *next_node, *head;
 
 	if (!head_ptr || !*head_ptr)
 		return;
@@ -151,7 +151,7 @@ void custom_free_list(CustomList **head_ptr)
 	while (node)
 	{
 		next_node = node->next;
-		free(node->data);
+		free(node->str);
 		free(node);
 		node = next_node;
 	}

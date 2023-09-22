@@ -1,13 +1,13 @@
 #include "shell.h"
 
 /**
- * _set_memory - fills memory with a constant byte
+ * set_memo - fills memory with a constant byte
  * @s: the pointer to the memory area
  * @b: the byte to fill *s with
  * @n: the amount of bytes to be filled
  * Return: (s) a pointer to the memory area s
  */
-char *_set_memory(char *s, char b, unsigned int n)
+char *set_memo(char *s, char b, unsigned int n)
 {
 	unsigned int i;
 
@@ -17,29 +17,29 @@ char *_set_memory(char *s, char b, unsigned int n)
 }
 
 /**
- * free_strings - frees a string of strings
- * @str_arr: string of strings
+ * free_memo - frees a string of strings
+ * @pp: string of strings
  */
-void free_strings(char **str_arr)
+void free_string(char **pp)
 {
-	char **arr = str_arr;
+	char **a = pp;
 
-	if (!str_arr)
+	if (!pp)
 		return;
-	while (*str_arr)
-		free(*str_arr++);
-	free(arr);
+	while (*pp)
+		free(*pp++);
+	free(a);
 }
 
 /**
- * _reallocate - reallocates a block of memory
+ * realloc_memo - reallocates a block of memory
  * @ptr: pointer to previous malloc'ated block
  * @old_size: byte size of previous block
  * @new_size: byte size of new block
  *
- * Return: pointer to the old block nameen.
+ * Return: pointer to da ol'block nameen.
  */
-void *_reallocate(void *ptr, unsigned int old_size, unsigned int new_size)
+void *realloc_memo(void *ptr, unsigned int old_size, unsigned int new_size)
 {
 	char *p;
 

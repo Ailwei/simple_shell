@@ -1,181 +1,144 @@
 #include "shell.h"
 
 /**
- * get_history_filename - Get the history file name
- * @info: Pointer to ShellInfo structure
+ * get_history_file - gets the history file
+ * @info: parameter struct
  *
- * Return: Allocated string containing the history file name
+ * Return: allocated string containg history file
  */
-char *get_history_filename(ShellInfo *info)
+
+char *get_history_file(info_t *info)
 {
-    char *home_dir;
+	char *buf, *dir;
 
-    home_dir = getenv(info, "HOME=");
-    if (!home_dir)
-        return (NULL);
-
-    char *filename = malloc(sizeof(char) * (strlen(home_dir) + strlen(HIST_FILE) + 2));
-    if (!filename)
-        return (NULL);
-
-    filename[0] = 0;
-    strcpy(filename, home_dir);
-    strcat(filename, "/");
-    strcat(filename, HIST_FILE);
-
-    return (filename);
+	dir = fetch_env(info, "HOME=");
+	if (!dir)
+		return (NULL);
+	buf = malloc(sizeof(char) * (string_length(dir) + string_length(HIST_FILE) + 2));
+	if (!buf)
+		return (NULL);
+	buf[0] = 0;
+	string_copy(buf, dir);
+	string_concatenate(buf, "/");
+	string_concatenate(buf, HIST_FILE);
+	return (buf);
 }
 
 /**
- * write_history_to_file - Write the history to a file
- * @info: Pointer to ShellInfo structure
+ * write_history - creates a file, or appends to an existing file
+ * @info: the parameter struct
  *
  * Return: 1 on success, else -1
  */
-int write_history_to_file(ShellInfo *info)
+int write_history(info_t *info)
 {
-    ssize_t fd;
-    char *filename = get_history_filename(info);
-    ShellHistoryEntry *entry;
+	ssize_t fd;
+	char *filename = get_history_file(info);
+	list_t *node = NULL;
 
-    if (!filename)
-        return (-1);
+	if (!filename)
+		return (-1);
 
-    fd = open(filename, O_CREAT | O_TRUNC | O_RDWR, 0644);
-    free(filename);
-
-    if (fd == -1)
-        return (-1);
-
-    for (entry = info->history; entry; entry = entry->next)
-    {
-        putsfd(entry->command, fd);
-        putcharfd('\n', fd);
-    }
-
-    putcharfd(BUF_FLUSH, fd);
-    close(fd);
-    return (1);
+	fd = open(filename, O_CREAT | O_TRUNC | O_RDWR, 0644);
+	free(filename);
+	if (fd == -1)
+		return (-1);
+	for (node = info->history; node; node = node->next)
+	{
+		_puts_file_des(node->str, fd);
+		_put_file_des('\n', fd);
+	}
+	_put_file_des(BUF_FLUSH, fd);
+	close(fd);
+	return (1);
 }
 
 /**
- * read_history_from_file - Read the history from a file
- * @info: Pointer to ShellInfo structure
+ * read_history - reads history from file
+ * @info: the parameter struct
  *
- * Return: Number of history entries read, or 0 on failure
+ * Return: histcount on success, 0 otherwise
  */
-int read_history_from_file(ShellInfo *info)
+int read_history(info_t *info)
 {
-    int i, last = 0, linecount = 0;
-    ssize_t fd, rdlen, file_size = 0;
-    struct stat st;
-    char *buf = NULL, *filename = get_history_filename(info);
+	int i, last = 0, linecount = 0;
+	ssize_t fd, rdlen, fsize = 0;
+	struct stat st;
+	char *buf = NULL, *filename = get_history_file(info);
 
-    if (!filename)
-        return (0);
+	if (!filename)
+		return (0);
 
-    fd = open(filename, O_RDONLY);
-    free(filename);
-
-    if (fd == -1)
-        return (0);
-
-    if (!fstat(fd, &st))
-        file_size = st.st_size;
-
-    if (file_size < 2)
-        return (0);
-
-    buf = malloc(sizeof(char) * (file_size + 1));
-    if (!buf)
-        return (0);
-
-    rdlen = read(fd, buf, file_size);
-    buf[file_size] = 0;
-
-    if (rdlen <= 0)
-        return (free(buf), 0);
-
-    close(fd);
-
-    for (i = 0; i < file_size; i++)
-    {
-        if (buf[i] == '\n')
-        {
-            buf[i] = 0;
-            add_history_entry(info, buf + last, linecount++);
-            last = i + 1;
-        }
-    }
-
-    if (last != i)
-        add_history_entry(info, buf + last, linecount++);
-
-    free(buf);
-    info->histcount = linecount;
-
-    while (info->histcount-- >= MAX_HISTORY_ENTRIES)
-        delete_history_entry(&(info->history), 0);
-
-    renumber_history_entries(info);
-    return (info->histcount);
+	fd = open(filename, O_RDONLY);
+	free(filename);
+	if (fd == -1)
+		return (0);
+	if (!fstat(fd, &st))
+		fsize = st.st_size;
+	if (fsize < 2)
+		return (0);
+	buf = malloc(sizeof(char) * (fsize + 1));
+	if (!buf)
+		return (0);
+	rdlen = read(fd, buf, fsize);
+	buf[fsize] = 0;
+	if (rdlen <= 0)
+		return (free(buf), 0);
+	close(fd);
+	for (i = 0; i < fsize; i++)
+		if (buf[i] == '\n')
+		{
+			buf[i] = 0;
+			build_history_list(info, buf + last, linecount++);
+			last = i + 1;
+		}
+	if (last != i)
+		build_history_list(info, buf + last, linecount++);
+	free(buf);
+	info->histcount = linecount;
+	while (info->histcount-- >= HIST_MAX)
+		remove_node_at_index(&(info->history), 0);
+	renumber_history(info);
+	return (info->histcount);
 }
 
 /**
- * add_history_entry - Add a new entry to the command history
- * @info: Pointer to ShellInfo structure
- * @entry: The command entry to add
+ * build_history_list - adds entry to a history linked list
+ * @info: Structure containing potential arguments. Used to maintain
+ * @buf: buffer
+ * @linecount: the history linecount, histcount
  *
- * Return: 1 on success, else 0
+ * Return: Always 0
  */
-int add_history_entry(ShellInfo *info, char *entry, int linecount)
+int build_history_list(info_t *info, char *buf, int linecount)
 {
-    ShellHistoryEntry *new_entry = malloc(sizeof(ShellHistoryEntry));
-    if (!new_entry)
-        return (0);
+	list_t *node = NULL;
 
-    new_entry->linecount = linecount;
-    new_entry->command = _strdup(entry);
-    new_entry->next = NULL;
+	if (info->history)
+		node = info->history;
+	add_node_end(&node, buf, linecount);
 
-    if (!new_entry->command)
-    {
-        free(new_entry);
-        return (0);
-    }
-
-    if (!info->history)
-    {
-        info->history = new_entry;
-    }
-    else
-    {
-        ShellHistoryEntry *last = info->history;
-        while (last->next)
-            last = last->next;
-        last->next = new_entry;
-    }
-
-    return (1);
+	if (!info->history)
+		info->history = node;
+	return (0);
 }
 
 /**
- * renumber_history_entries - Renumber the history entries
- * @info: Pointer to ShellInfo structure
+ * renumber_history - renumbers the history linked list after changes
+ * @info: Structure containing potential arguments. Used to maintain
  *
- * Return: The new histcount
+ * Return: the new histcount
  */
-int renumber_history_entries(ShellInfo *info)
+int renumber_history(info_t *info)
 {
-    int linecount = 0;
-    ShellHistoryEntry *entry = info->history;
+	list_t *node = info->history;
+	int i = 0;
 
-    while (entry)
-    {
-        entry->linecount = linecount++;
-        entry = entry->next;
-    }
-
-    return (info->histcount = linecount);
+	while (node)
+	{
+		node->num = i++;
+		node = node->next;
+	}
+	return (info->histcount = i);
 }
 

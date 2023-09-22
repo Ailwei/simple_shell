@@ -1,136 +1,86 @@
 #include "shell.h"
 
 /**
- * custom_atoi - Converts a string to an integer
- * @str: The string to be converted
+ * _eputs - prints an input string
+ * @str: the string to be printed
  *
- * Return: The converted number if successful, or -1 on error
+ * Return: Nothing
  */
-int custom_atoi(char *str)
+void _eputs(char *str)
 {
 	int i = 0;
-	unsigned long int result = 0;
 
-	if (*str == '+')
-		str++;  /* TODO: why does this make main return 255? */
-	for (i = 0;  str[i] != '\0'; i++)
+	if (!str)
+		return;
+	while (str[i] != '\0')
 	{
-		if (str[i] >= '0' && str[i] <= '9')
-		{
-			result *= 10;
-			result += (str[i] - '0');
-			if (result > INT_MAX)
-				return (-1);
-		}
-		else
-			return (-1);
+		_eputchar(str[i]);
+		i++;
 	}
-	return (result);
 }
 
 /**
- * print_custom_error - Prints an error message
- * @info: The parameter & return info struct
- * @error_type: String containing the specified error type
- */
-void print_custom_error(ShellInfo *info, char *error_type)
-{
-	 print_string(info->fname);
-	 print_string(": ");
-	print_custom_d(info->line_count, STDERR_FILENO);
-	 print_string(": ");
-	 print_string(info->arg[0]);
-	 print_string(": ");
-	 print_string(error_type);
-}
-
-/**
- * print_custom_d - Prints a decimal (integer) number (base 10)
- * @input: The input number
- * @fd: The file descriptor to write to
+ * _eputchar - writes the character c to stderr
+ * @c: The character to print
  *
- * Return: The number of characters printed
+ * Return: On success 1.
+ * On error, -1 is returned, and errno is set appropriately.
  */
-int print_custom_d(int input, int fd)
+int _eputchar(char c)
 {
-	int (*custom_putchar)(char) = print_character;
-	int i, count = 0;
-	unsigned int abs_value, current;
+	static int i;
+	static char buf[WRITE_BUF_SIZE];
 
-	if (fd == STDERR_FILENO)
-		custom_putchar = print_character;
-	if (input < 0)
+	if (c == BUF_FLUSH || i >= WRITE_BUF_SIZE)
 	{
-		abs_value = -input;
-		custom_putchar('-');
-		count++;
+		write(2, buf, i);
+		i = 0;
 	}
-	else
-		abs_value = input;
-	current = abs_value;
-	for (i = 1000000000; i > 1; i /= 10)
-	{
-		if (abs_value / i)
-		{
-			custom_putchar('0' + current / i);
-			count++;
-		}
-		current %= i;
-	}
-	custom_putchar('0' + current);
-	count++;
-
-	return (count);
+	if (c != BUF_FLUSH)
+		buf[i++] = c;
+	return (1);
 }
 
 /**
- * custom_convert_number - Converter function, a clone of itoa
- * @num: The number to convert
- * @base: The base for conversion
- * @flags: Argument flags
+ * _putfd - writes the character c to given fd
+ * @c: The character to print
+ * @fd: The filedescriptor to write to
  *
- * Return: A string representing the converted number
+ * Return: On success 1.
+ * On error, -1 is returned, and errno is set appropriately.
  */
-char *custom_convert_number(long int num, int base, int flags)
+int _put_file_des(char c, int fd)
 {
-	static char *array;
-	static char buffer[50];
-	char sign = 0;
-	char *ptr;
-	unsigned long n = num;
+	static int i;
+	static char buf[WRITE_BUF_SIZE];
 
-	if (!(flags & CONVERT_UNSIGNED) && num < 0)
+	if (c == BUF_FLUSH || i >= WRITE_BUF_SIZE)
 	{
-		n = -num;
-		sign = '-';
+		write(fd, buf, i);
+		i = 0;
 	}
-	array = flags & CONVERT_LOWERCASE ? "0123456789abcdef" : "0123456789ABCDEF";
-	ptr = &buffer[49];
-	*ptr = '\0';
-
-	do	{
-		*--ptr = array[n % base];
-		n /= base;
-	} while (n != 0);
-
-	if (sign)
-		*--ptr = sign;
-	return (ptr);
+	if (c != BUF_FLUSH)
+		buf[i++] = c;
+	return (1);
 }
 
 /**
- * remove_custom_comments - Replaces the first instance of '#' with '\0'
- * @buf: Address of the string to modify
+ * _puts_file_des - prints an input string
+ * @str: the string to be printed
+ * @fd: the filedescriptor to write to
+ *
+ * Return: the number of chars put
  */
-void remove_custom_comments(char *buf)
+int _puts_file_des(char *str, int fd)
 {
-	int i;
+	int i = 0;
 
-	for (i = 0; buf[i] != '\0'; i++)
-		if (buf[i] == '#' && (!i || buf[i - 1] == ' '))
-		{
-			buf[i] = '\0';
-			break;
-		}
+	if (!str)
+		return (0);
+	while (*str)
+	{
+		i += _put_file_des(*str++, fd);
+	}
+	return (i);
 }
 
