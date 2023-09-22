@@ -15,13 +15,13 @@ void remove_info(info_t *info)
 /**
  * create_info - initializes info_t struct
  * @info: struct address
- * @av: argument vector
+ * @ag_v: argument vector
  */
-void create_info(info_t *info, char **av)
+void create_info(info_t *info, char **ag_v)
 {
-	int i = 0;
+	int y = 0;
 
-	info->fname = av[0];
+	info->fname = ag_v[0];
 	if (info->arg)
 	{
 		info->argv = str_split(info->arg, " \t");
@@ -34,9 +34,9 @@ void create_info(info_t *info, char **av)
 				info->argv[1] = NULL;
 			}
 		}
-		for (i = 0; info->argv && info->argv[i]; i++)
+		for (y = 0; info->argv && info->argv[y]; y++)
 			;
-		info->argc = i;
+		info->argc = y;
 
 		replace_alias(info);
 		replace_variables(info);
@@ -44,7 +44,7 @@ void create_info(info_t *info, char **av)
 }
 
 /**
- * free_info - frees info_t struct fields
+ * free_info - free info_t struct field
  * @info: struct address
  * @all: true if freeing all fields
  */

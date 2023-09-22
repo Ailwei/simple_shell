@@ -23,8 +23,8 @@ char *string_copy(char *dest, char *src)
 }
 
 /**
- * string_duplicate - duplicates a string
- * @str: the string to duplicate
+ * string_duplicate - duplicate a string
+ * @str: the string to duplicates
  *
  * Return: pointer to the duplicated string
  */
@@ -46,26 +46,26 @@ char *string_duplicate(const char *str)
 }
 
 /**
- * print_string - prints an input string
+ * print_string - print an input string
  * @str: the string to be printed
  *
  * Return: Nothing
  */
 void print_string(char *str)
 {
-	int i = 0;
+	int p = 0;
 
 	if (!str)
 		return;
-	while (str[i] != '\0')
+	while (str[p] != '\0')
 	{
-		_putchar(str[i]);
-		i++;
+		_putchar(str[p]);
+		p++;
 	}
 }
 
 /**
- * _putchar - writes the character c to stdout
+ * _putchar - write the char c to stdout
  * @c: The character to print
  *
  * Return: On success 1.
@@ -73,16 +73,16 @@ void print_string(char *str)
  */
 int _putchar(char c)
 {
-	static int i;
+	static int v;
 	static char buf[WRITE_BUF_SIZE];
 
-	if (c == BUF_FLUSH || i >= WRITE_BUF_SIZE)
+	if (c == BUF_FLUSH || v >= WRITE_BUF_SIZE)
 	{
-		write(1, buf, i);
-		i = 0;
+		write(1, buf, v);
+		v = 0;
 	}
 	if (c != BUF_FLUSH)
-		buf[i++] = c;
+		buf[v++] = c;
 	return (1);
 }
 

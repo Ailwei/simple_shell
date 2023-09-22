@@ -1,8 +1,8 @@
 #include "shell.h"
 
 /**
- * print_env - prints the current environment
- * @info: Structure containing potential arguments. Used to maintain
+ * print_env - print the current environment
+ * @info: Structure containing potential argument. Used to maintain
  *          constant function prototype.
  * Return: Always 0
  */
@@ -35,7 +35,7 @@ char *fetch_env(info_t *info, const char *name)
 }
 
 /**
- * my_setenv - Initialize a new environment variable,
+ * my_setenv - Initialises a new environment variable,
  *             or modify an existing one
  * @info: Structure containing potential arguments. Used to maintain
  *        constant function prototype.
@@ -54,28 +54,28 @@ int my_setenv(info_t *info)
 }
 
 /**
- * my_unsetenv - Remove an environment variable
+ * my_unsetenv - Remove environment variable
  * @info: Structure containing potential arguments. Used to maintain
  *        constant function prototype.
  * Return: Always 0
  */
 int my_unsetenv(info_t *info)
 {
-	int i;
+	int x;
 
 	if (info->argc == 1)
 	{
 		_eputs("Too few arguements.\n");
 		return (1);
 	}
-	for (i = 1; i <= info->argc; i++)
-		unset_env(info, info->argv[i]);
+	for (x = 1; x <= info->argc; x++)
+		unset_env(info, info->argv[x]);
 
 	return (0);
 }
 
 /**
- * fill_env_list - populates env linked list
+ * fill_env_list - fill env linked list
  * @info: Structure containing potential arguments. Used to maintain
  *          constant function prototype.
  * Return: Always 0
@@ -83,10 +83,10 @@ int my_unsetenv(info_t *info)
 int fill_env_list(info_t *info)
 {
 	list_t *node = NULL;
-	size_t i;
+	size_t z;
 
-	for (i = 0; environ[i]; i++)
-		add_node_end(&node, environ[i], 0);
+	for (z = 0; environ[z]; z++)
+		add_node_end(&node, environ[z], 0);
 	info->env = node;
 	return (0);
 }

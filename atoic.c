@@ -2,8 +2,8 @@
 #include "shell.h"
 
 /**
- * is_interactive - returns true if shell is interactive mode
- * @info: struct address
+ * is_interactive - return true if shell is interactive mode
+ * @info: struct addresses
  *
  * Return: 1 if interactive mode, 0 otherwise
  */
@@ -14,53 +14,53 @@ int is_interactive(info_t *info)
 
 /**
  * check_delimiters - checks if character is a delimeter
- * @c: the char to check
+ * @character: the char to check
  * @delim: the delimeter string
  * Return: 1 if true, 0 if false
  */
-int check_delimiters(char c, char *delim)
+int check_delimiters(char character, char *delim)
 {
 	while (*delim)
-		if (*delim++ == c)
+		if (*delim++ == character)
 			return (1);
 	return (0);
 }
 
 /**
- * check_alpha - checks for alphabetic character
- * @c: The character to input
+ * check_alpha - check for alphaetic char
+ * @character: The char to input
  * Return: 1 if c is alphabetic, 0 otherwise
  */
 
-int check_alpha(int c)
+int check_alpha(int character)
 {
-	if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
+	if ((character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z'))
 		return (1);
 	else
 		return (0);
 }
 
 /**
- * convert_str_int - converts a string to an integer
- * @s: the string to be converted
+ * convert_str_int - convert a string to an integer
+ * @str: the string to be converted
  * Return: 0 if no numbers in string, converted number otherwise
  */
 
-int convert_str_int(char *s)
+int convert_str_int(char *str)
 {
-	int i, sign = 1, flag = 0, output;
+	int j, sign = 1, flag = 0, output;
 	unsigned int result = 0;
 
-	for (i = 0; s[i] != '\0' && flag != 2; i++)
+	for (j = 0; str[j] != '\0' && flag != 2; j++)
 	{
-		if (s[i] == '-')
+		if (str[j] == '-')
 			sign *= -1;
 
-		if (s[i] >= '0' && s[i] <= '9')
+		if (str[j] >= '0' && str[j] <= '9')
 		{
 			flag = 1;
 			result *= 10;
-			result += (s[i] - '0');
+			result += (str[j] - '0');
 		}
 		else if (flag == 1)
 			flag = 2;
